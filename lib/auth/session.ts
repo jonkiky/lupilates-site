@@ -18,8 +18,12 @@ export function verifySessionValue(value: string | undefined) {
   if (!encoded || !signature) return null;
   const expected = sign(encoded);
   if (!timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) return null;
-  const parsed = JSON.parse(Buffer.from(encoded, 'base64url').toString('utf8')) as { username: string; expiresAt: number };
-  return parsed.expiresAt > Date.now() ? parsed : null;
+  try {
+    const parsed = JSON.parse(Buffer.from(encoded, 'base64url').toString('utf8')) as { username: string; expiresAt: number };
+    return parsed.expiresAt > Date.now() ? parsed : null;
+  } catch {
+    return null;
+  }
 }
 
 export { SESSION_COOKIE_NAME };

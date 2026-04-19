@@ -1,4 +1,4 @@
-import { timingSafeEqual } from 'node:crypto';
+import { createHmac, timingSafeEqual } from 'node:crypto';
 import { z } from 'zod';
 
 export const loginSchema = z.object({
@@ -7,13 +7,17 @@ export const loginSchema = z.object({
 });
 
 export function credentialsMatch(inputUsername: string, inputPassword: string) {
-  const expectedUsername = Buffer.from(process.env.ADMIN_USERNAME ?? '');
-  const expectedPassword = Buffer.from(process.env.ADMIN_PASSWORD ?? '');
-  const actualUsername = Buffer.from(inputUsername);
-  const actualPassword = Buffer.from(inputPassword);
+  const secret = process.env.SESSION_SECRET ?? 'dev-secret';
+  const hmac = (value: string) =>
+    createHmac('sha256', secret).update(value).digest();
 
-  return expectedUsername.length === actualUsername.length &&
-    expectedPassword.length === actualPassword.length &&
-    timingSafeEqual(expectedUsername, actualUsername) &&
-    timingSafeEqual(expectedPassword, actualPassword);
+  const expectedUsernameHash = hmac(process.env.ADMIN_USERNAME ?? '');
+  const expectedPasswordHash = hmac(process.env.ADMIN_PASSWORD ?? '');
+  const actualUsernameHash = hmac(inputUsername);
+  const actualPasswordHash = hmac(inputPassword);
+
+  const usernameMatch = timingSafeEqual(expectedUsernameHash, actualUsernameHash);
+  const passwordMatch = timingSafeEqual(expectedPasswordHash, actualPasswordHash);
+
+  return usernameMatch && passwordMatch;
 }
