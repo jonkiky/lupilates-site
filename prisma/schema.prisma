@@ -32,6 +32,8 @@ model Category {
   products  Product[]
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
+
+  @@index([parentId])
 }
 
 model Product {
@@ -50,6 +52,9 @@ model Product {
   createdAt        DateTime                @default(now())
   updatedAt        DateTime                @updatedAt
   quoteItems       QuoteItem[]
+
+  @@index([categoryId])
+  @@index([visibilityStatus, isFeatured])
 }
 
 model QuoteRequest {
@@ -66,6 +71,8 @@ model QuoteRequest {
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
   items         QuoteItem[]
+
+  @@index([status])
 }
 
 model QuoteItem {
@@ -78,4 +85,7 @@ model QuoteItem {
   skuSnapshot         String
   quantity            Int
   itemNotes           String       @default("")
+
+  @@index([quoteRequestId])
+  @@index([productId])
 }
