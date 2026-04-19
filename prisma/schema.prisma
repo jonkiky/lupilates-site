@@ -1,0 +1,81 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("POSTGRES_URL")
+  directUrl = env("POSTGRES_URL_NON_POOLING")
+}
+
+enum ProductVisibilityStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum QuoteStatus {
+  NEW
+  REVIEWING
+  CONTACTED
+  QUOTED
+  CLOSED
+}
+
+model Category {
+  id        String     @id @default(cuid())
+  name      String
+  slug      String     @unique
+  parentId  String?
+  parent    Category?  @relation("CategoryTree", fields: [parentId], references: [id])
+  children  Category[] @relation("CategoryTree")
+  products  Product[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model Product {
+  id               String                  @id @default(cuid())
+  sku              String                  @unique
+  name             String
+  slug             String                  @unique
+  description      String
+  categoryId       String
+  category         Category                @relation(fields: [categoryId], references: [id])
+  specsJson        Json
+  imageUrls        Json
+  availabilityText String
+  visibilityStatus ProductVisibilityStatus @default(DRAFT)
+  isFeatured       Boolean                 @default(false)
+  createdAt        DateTime                @default(now())
+  updatedAt        DateTime                @updatedAt
+  quoteItems       QuoteItem[]
+}
+
+model QuoteRequest {
+  id            String      @id @default(cuid())
+  quoteNumber   String      @unique
+  customerName  String
+  companyName   String
+  email         String
+  phone         String
+  region        String
+  projectNotes  String
+  status        QuoteStatus @default(NEW)
+  internalNotes String      @default("")
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  items         QuoteItem[]
+}
+
+model QuoteItem {
+  id                  String       @id @default(cuid())
+  quoteRequestId      String
+  quoteRequest        QuoteRequest @relation(fields: [quoteRequestId], references: [id], onDelete: Cascade)
+  productId           String
+  product             Product      @relation(fields: [productId], references: [id])
+  productNameSnapshot String
+  skuSnapshot         String
+  quantity            Int
+  itemNotes           String       @default("")
+}
