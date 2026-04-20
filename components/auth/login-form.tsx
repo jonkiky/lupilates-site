@@ -26,7 +26,7 @@ export function LoginForm() {
     if (result.success) {
       router.push('/user/dashboard');
     } else {
-      setError(result.error);
+      setError(result.error || 'Login failed');
     }
   }
 
@@ -69,7 +69,7 @@ export function LoginForm() {
       </button>
 
       <p className="text-center text-sm text-stone-600">
-        Don't have an account? <a href="/auth/signup" className="font-medium text-stone-950 hover:underline">Sign up</a>
+        Don&apos;t have an account? <a href="/auth/signup" className="font-medium text-stone-950 hover:underline">Sign up</a>
       </p>
     </form>
   );

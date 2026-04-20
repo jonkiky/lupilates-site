@@ -23,8 +23,8 @@ A Next.js B2B web application for browsing 3D printing products and submitting q
 
 | Variable | Description |
 |---|---|
-| `POSTGRES_URL` | Pooled Postgres connection string |
-| `POSTGRES_URL_NON_POOLING` | Direct Postgres connection string (for migrations) |
+| `DATABASE_URL` | Primary Postgres connection string |
+| `DATABASE_URL_UNPOOLED` | Direct Postgres connection string (for migrations) |
 | `BLOB_READ_WRITE_TOKEN` | Vercel Blob token for image uploads |
 | `ADMIN_USERNAME` | Admin login username |
 | `ADMIN_PASSWORD` | Admin login password |

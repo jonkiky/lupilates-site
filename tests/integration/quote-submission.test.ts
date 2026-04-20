@@ -5,6 +5,12 @@ vi.mock('@/lib/repositories/quotes', () => ({
   createQuoteRequest: vi.fn().mockResolvedValue({ quoteNumber: 'Q-1001', items: [] }),
 }));
 
+vi.mock('next/headers', () => ({
+  cookies: vi.fn(() => ({
+    get: vi.fn(),
+  })),
+}));
+
 describe('submitQuoteRequest', () => {
   it('returns a quote number when the payload is valid', async () => {
     const result = await submitQuoteRequest({

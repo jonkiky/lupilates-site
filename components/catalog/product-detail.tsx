@@ -1,7 +1,9 @@
 'use client';
 
 import Image from 'next/image';
+import Link from 'next/link';
 import { useState } from 'react';
+import { loadCart, addItem, saveCart } from '@/lib/quote/cart-store';
 
 type Product = {
   id: string;
@@ -20,6 +22,21 @@ export function ProductDetail({ product }: Props) {
   const images = Array.isArray(product.imageUrls) ? (product.imageUrls as string[]) : [];
   const specs = product.specsJson && typeof product.specsJson === 'object' ? product.specsJson as Record<string, string> : {};
   const [activeImage, setActiveImage] = useState(0);
+  const [showNotification, setShowNotification] = useState(false);
+
+  function handleAddToCart() {
+    const cart = loadCart();
+    const updatedCart = addItem(cart, {
+      productId: product.id,
+      productName: product.name,
+      sku: product.sku,
+    });
+    saveCart(updatedCart);
+    
+    // Show notification
+    setShowNotification(true);
+    setTimeout(() => setShowNotification(false), 3000);
+  }
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
@@ -66,15 +83,25 @@ export function ProductDetail({ product }: Props) {
           )}
           <button
             className="mt-4 rounded-full bg-stone-950 px-6 py-3 text-sm font-medium text-white hover:bg-stone-700"
-            onClick={() => {
-              // Cart add handled by parent via event or context in future tasks
-              alert('Added to quote cart — cart implementation in Task 5');
-            }}
+            onClick={handleAddToCart}
           >
             Add to quote cart
           </button>
+          <Link
+            href="/quote-cart"
+            className="mt-2 inline-block text-center rounded-full border border-stone-200 px-6 py-3 text-sm font-medium text-stone-900 hover:bg-stone-50"
+          >
+            View cart
+          </Link>
         </div>
       </div>
+
+      {/* Toast Notification */}
+      {showNotification && (
+        <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-96 rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm text-emerald-800 shadow-lg">
+          <p className="font-medium">✓ Added to quote cart</p>
+        </div>
+      )}
     </main>
   );
 }

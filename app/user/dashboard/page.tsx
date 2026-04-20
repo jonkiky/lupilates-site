@@ -5,7 +5,7 @@ import { getUserQuotes } from '@/lib/repositories/users';
 import { logoutAction } from '@/app/actions/user-auth';
 
 export default async function UserDashboardPage() {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const sessionValue = cookieStore.get(USER_SESSION_COOKIE_NAME)?.value;
   const session = verifyUserSessionValue(sessionValue);
 
