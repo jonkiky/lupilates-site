@@ -1,8 +1,8 @@
 import Link from 'next/link';
 import { cookies } from 'next/headers';
 import { verifyUserSessionValue, USER_SESSION_COOKIE_NAME } from '@/lib/auth/user-session';
-import { getUserQuotes } from '@/lib/repositories/users';
-import { logoutAction } from '@/app/actions/user-auth';
+import { getUserQuotes, getUserById } from '@/lib/repositories/users';
+import { AuthNav } from '@/components/header/auth-nav';
 
 export default async function UserDashboardPage() {
   const cookieStore = await cookies();
@@ -14,22 +14,16 @@ export default async function UserDashboardPage() {
   }
 
   const quotes = await getUserQuotes(session.userId);
+  const user = await getUserById(session.userId);
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mb-8 flex items-center justify-between">
+      <AuthNav user={user ? { userId: user.id, email: user.email } : null} />
+      <div className="mb-8 mt-8">
         <div>
           <h1 className="text-3xl font-semibold text-stone-950">My Quotes</h1>
           <p className="mt-2 text-sm text-stone-600">View and manage your submitted quotes</p>
         </div>
-        <form action={logoutAction}>
-          <button
-            type="submit"
-            className="rounded-full border border-stone-300 px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50"
-          >
-            Log out
-          </button>
-        </form>
       </div>
 
       {quotes.length === 0 ? (
