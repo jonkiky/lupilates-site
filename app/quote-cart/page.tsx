@@ -1,8 +1,8 @@
 import { cookies } from 'next/headers';
-import { QuoteCartClient } from '@/components/quote/quote-cart-client';
-import { AuthNav } from '@/components/header/auth-nav';
 import { verifyUserSessionValue, USER_SESSION_COOKIE_NAME } from '@/lib/auth/user-session';
 import { getUserById } from '@/lib/repositories/users';
+import { QuoteCartClient } from '@/components/quote/quote-cart-client';
+import { AuthNav } from '@/components/header/auth-nav';
 
 export default async function QuoteCartPage() {
   // Read user session
