@@ -1,10 +1,10 @@
 import Link from 'next/link';
 import { cookies } from 'next/headers';
 import { listPublishedProducts } from '@/lib/repositories/products';
+import { getUserById } from '@/lib/repositories/users';
+import { verifyUserSessionValue, USER_SESSION_COOKIE_NAME } from '@/lib/auth/user-session';
 import { ProductGrid } from '@/components/catalog/product-grid';
 import { AuthNav } from '@/components/header/auth-nav';
-import { verifyUserSessionValue, USER_SESSION_COOKIE_NAME } from '@/lib/auth/user-session';
-import { getUserById } from '@/lib/repositories/users';
 
 export default async function HomePage() {
   const products = await listPublishedProducts({ search: '', category: '' });
