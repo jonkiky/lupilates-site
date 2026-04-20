@@ -1,14 +1,17 @@
 import { db } from '@/lib/db';
 
-export async function createQuoteRequest(input: {
-  customerName: string;
-  companyName: string;
-  email: string;
-  phone: string;
-  region: string;
-  projectNotes: string;
-  items: Array<{ productId: string; quantity: number; itemNotes: string }>;
-}) {
+export async function createQuoteRequest(
+  input: {
+    customerName: string;
+    companyName: string;
+    email: string;
+    phone: string;
+    region: string;
+    projectNotes: string;
+    items: Array<{ productId: string; quantity: number; itemNotes: string }>;
+  },
+  userId?: string,
+) {
   const products = await db.product.findMany({ where: { id: { in: input.items.map((i) => i.productId) } } });
   const quoteNumber = `Q-${Date.now()}`;
 
@@ -22,6 +25,7 @@ export async function createQuoteRequest(input: {
         phone: input.phone,
         region: input.region,
         projectNotes: input.projectNotes,
+        userId,
         items: {
           create: input.items.map((item) => {
             const product = products.find((p) => p.id === item.productId);
