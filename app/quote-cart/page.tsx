@@ -19,7 +19,7 @@ export default async function QuoteCartPage() {
   }
 
   return (
-    <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
+    <main className="mx-auto max-w-4xl py-8">
       <AuthNav user={user} />
       <div className="mt-8">
         <h1 className="text-3xl font-semibold tracking-tight text-stone-950">Quote cart</h1>
