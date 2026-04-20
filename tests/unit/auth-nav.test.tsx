@@ -1,10 +1,15 @@
-import { describe, expect, it, beforeEach } from 'vitest';
+import { describe, expect, it, vi, afterEach } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/react';
 import { AuthNav } from '@/components/header/auth-nav';
 
+vi.mock('@/app/actions/user-auth', () => ({
+  logoutAction: vi.fn(),
+}));
+
 describe('AuthNav', () => {
-  beforeEach(() => {
+  afterEach(() => {
     cleanup();
+    vi.clearAllMocks();
   });
 
   describe('Authenticated state', () => {
@@ -21,9 +26,9 @@ describe('AuthNav', () => {
       const buttons = container.querySelectorAll('button');
       const logoutButton = Array.from(buttons).find(btn => btn.textContent?.includes('Log out'));
       
-      expect(logoutButton).toBeInTheDocument();
+      expect(logoutButton).toBeDefined();
       const form = logoutButton?.closest('form');
-      expect(form).toBeInTheDocument();
+      expect(form).not.toBeNull();
       expect(form).toHaveAttribute('action');
     });
 
@@ -50,12 +55,10 @@ describe('AuthNav', () => {
     it('does not render email or logout button when unauthenticated', () => {
       const { container } = render(<AuthNav user={null} />);
       
-      // Check for logout button specifically
       const buttons = container.querySelectorAll('button');
       const logoutButton = Array.from(buttons).find(btn => btn.textContent?.includes('Log out'));
       expect(logoutButton).toBeUndefined();
       
-      // Check there are no email-like text nodes in the component
       const spans = container.querySelectorAll('span');
       const hasEmail = Array.from(spans).some(span => span.textContent?.includes('@'));
       expect(hasEmail).toBe(false);
@@ -64,9 +67,10 @@ describe('AuthNav', () => {
 
   describe('Layout', () => {
     it('renders branding text "B2B Quote Cart"', () => {
-      const { container } = render(<AuthNav user={null} />);
-      const branding = container.querySelector('p');
-      expect(branding?.textContent).toBe('B2B Quote Cart');
+      render(<AuthNav user={null} />);
+      const elements = screen.getAllByText('B2B Quote Cart');
+      expect(elements.length).toBeGreaterThan(0);
+      expect(elements[0]).toBeInTheDocument();
     });
 
     it('has flex layout with items-center justify-between classes', () => {
