@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import { verifyUserSessionValue, USER_SESSION_COOKIE_NAME } from '@/lib/auth/user-session';
 import { getUserQuotes, getUserById } from '@/lib/repositories/users';
@@ -10,15 +11,20 @@ export default async function UserDashboardPage() {
   const session = verifyUserSessionValue(sessionValue);
 
   if (!session) {
-    return <div>Unauthorized</div>;
+    redirect('/auth/login');
   }
 
   const quotes = await getUserQuotes(session.userId);
   const user = await getUserById(session.userId);
 
+  let normalizedUser = null;
+  if (user) {
+    normalizedUser = { userId: user.id, email: user.email };
+  }
+
   return (
     <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-      <AuthNav user={user ? { userId: user.id, email: user.email } : null} />
+      <AuthNav user={normalizedUser} />
       <div className="mb-8 mt-8">
         <div>
           <h1 className="text-3xl font-semibold text-stone-950">My Quotes</h1>
