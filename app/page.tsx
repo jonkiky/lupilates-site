@@ -1,26 +1,30 @@
 import Link from 'next/link';
+import { cookies } from 'next/headers';
 import { listPublishedProducts } from '@/lib/repositories/products';
 import { ProductGrid } from '@/components/catalog/product-grid';
+import { AuthNav } from '@/components/header/auth-nav';
+import { verifyUserSessionValue, USER_SESSION_COOKIE_NAME } from '@/lib/auth/user-session';
+import { getUserById } from '@/lib/repositories/users';
 
 export default async function HomePage() {
   const products = await listPublishedProducts({ search: '', category: '' });
 
+  // Read user session
+  const cookieStore = await cookies();
+  const sessionValue = cookieStore.get(USER_SESSION_COOKIE_NAME)?.value;
+  const session = verifyUserSessionValue(sessionValue);
+
+  let user = null;
+  if (session) {
+    const dbUser = await getUserById(session.userId);
+    if (dbUser) {
+      user = { userId: dbUser.id, email: dbUser.email };
+    }
+  }
+
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(168,95,59,0.18),_transparent_30%),linear-gradient(180deg,_#fbf7f2_0%,_#efe7db_100%)] text-ink">
-      <div className="flex items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
-        <p className="text-sm font-medium text-stone-600">B2B Quote Cart</p>
-        <div className="flex gap-3">
-          <a href="/auth/login" className="text-sm font-medium text-stone-700 hover:text-stone-900">
-            Log in
-          </a>
-          <a
-            href="/auth/signup"
-            className="rounded-full bg-stone-950 px-3 py-1.5 text-sm font-medium text-white hover:bg-stone-700"
-          >
-            Sign up
-          </a>
-        </div>
-      </div>
+      <AuthNav user={user} />
       <section className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="mb-12 grid gap-6 rounded-[2rem] border border-black/5 bg-white/80 p-8 shadow-[0_24px_80px_rgba(24,20,17,0.12)] backdrop-blur sm:p-12">
           <p className="text-sm uppercase tracking-[0.3em] text-copper">B2B Product Catalog</p>
