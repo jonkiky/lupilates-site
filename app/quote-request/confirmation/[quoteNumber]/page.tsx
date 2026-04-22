@@ -14,7 +14,7 @@ export default async function ConfirmationPage({ params }: { params: Promise<{ q
         <p className="text-xs uppercase tracking-wide text-stone-400">Quote reference</p>
         <p className="mt-1 text-xl font-semibold text-stone-900">{quoteNumber}</p>
       </div>
-      <Link href="/products" className="rounded-full bg-stone-950 px-6 py-3 text-sm font-medium text-white hover:bg-stone-700">
+      <Link href="/" className="rounded-full bg-stone-950 px-6 py-3 text-sm font-medium text-white hover:bg-stone-700">
         Continue browsing
       </Link>
     </main>

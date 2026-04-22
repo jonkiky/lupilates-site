@@ -7,7 +7,7 @@ vi.mock('@/lib/repositories/products', () => ({
 }));
 
 describe('saveProduct', () => {
-  it('calls upsertProduct with parsed input and returns product', async () => {
+  it('calls upsertProduct with parsed input and returns success payload', async () => {
     const { saveProduct } = await import('@/app/actions/products');
     const result = await saveProduct({
       sku: 'PRINT-001',
@@ -21,7 +21,31 @@ describe('saveProduct', () => {
       visibilityStatus: 'PUBLISHED',
       isFeatured: false,
     });
-    expect(result.name).toBe('Bracket');
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.product.name).toBe('Bracket');
+    }
+  });
+
+  it('returns validation error when category is missing', async () => {
+    const { saveProduct } = await import('@/app/actions/products');
+    const result = await saveProduct({
+      sku: 'PRINT-001',
+      name: 'Bracket',
+      slug: 'bracket',
+      description: 'A structural bracket.',
+      categoryId: '',
+      specsJson: { material: 'Nylon' },
+      imageUrls: ['https://example.com/img.jpg'],
+      availabilityText: 'Available',
+      visibilityStatus: 'PUBLISHED',
+      isFeatured: false,
+    });
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error).toBe('Please select a category.');
+    }
   });
 });
 

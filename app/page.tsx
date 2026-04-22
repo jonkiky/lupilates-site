@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { cookies } from 'next/headers';
 import { listPublishedProducts } from '@/lib/repositories/products';
 import { getUserById } from '@/lib/repositories/users';
@@ -18,9 +17,11 @@ export default async function HomePage() {
   if (session) {
     const dbUser = await getUserById(session.userId);
     if (dbUser) {
-      user = { userId: dbUser.id, email: dbUser.email };
+      user = { userId: dbUser.id, email: dbUser.email, username: dbUser.username };
     }
   }
+
+  const isLoggedIn = !!user;
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(168,95,59,0.18),_transparent_30%),linear-gradient(180deg,_#fbf7f2_0%,_#efe7db_100%)] text-ink">
@@ -34,20 +35,6 @@ export default async function HomePage() {
           <p className="max-w-2xl text-base leading-7 text-stone-700 sm:text-lg">
             Browse products, build a quote cart, and submit project requirements without a checkout flow.
           </p>
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <Link
-              href="#products"
-              className="inline-flex items-center justify-center rounded-full bg-ink px-5 py-3 text-sm font-medium text-white transition hover:bg-black"
-            >
-              Browse products
-            </Link>
-            <Link
-              href="/quote-cart"
-              className="inline-flex items-center justify-center rounded-full border border-ink/15 bg-white px-5 py-3 text-sm font-medium text-ink transition hover:border-ink/40"
-            >
-              Open quote cart
-            </Link>
-          </div>
         </div>
 
         <div id="products" className="mx-auto max-w-6xl">
@@ -55,7 +42,7 @@ export default async function HomePage() {
             <p className="text-sm uppercase tracking-[0.2em] text-stone-500">Catalog</p>
             <h2 className="text-3xl font-semibold tracking-tight text-stone-950">Browse products</h2>
           </header>
-          <ProductGrid products={products} />
+          <ProductGrid products={products} isLoggedIn={isLoggedIn} />
         </div>
       </section>
     </main>

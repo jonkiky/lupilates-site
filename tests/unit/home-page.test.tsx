@@ -13,7 +13,7 @@ vi.mock('@/lib/repositories/products', () => ({
       description: 'A test product',
       availabilityText: 'In Stock',
       specsJson: {},
-      imageUrls: [],
+      images: [],
       categoryId: '1',
       category: { id: '1', name: 'Test Category', slug: 'test' },
     },

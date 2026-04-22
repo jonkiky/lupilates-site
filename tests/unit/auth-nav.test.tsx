@@ -6,6 +6,10 @@ vi.mock('@/app/actions/user-auth', () => ({
   logoutAction: vi.fn(),
 }));
 
+vi.mock('@/components/header/cart-icon', () => ({
+  CartIcon: () => <a href="/quote-cart" aria-label="View cart">Cart</a>,
+}));
+
 describe('AuthNav', () => {
   afterEach(() => {
     cleanup();
@@ -13,14 +17,16 @@ describe('AuthNav', () => {
   });
 
   describe('Authenticated state', () => {
-    it('renders user email', () => {
-      const user = { userId: 'user-123', email: 'john@example.com' };
+    it('renders the username as a profile link', () => {
+      const user = { userId: 'user-123', email: 'john@example.com', username: 'johnny' };
       render(<AuthNav user={user} />);
-      expect(screen.getByText('john@example.com')).toBeInTheDocument();
+
+      const profileLink = screen.getByRole('link', { name: 'johnny' });
+      expect(profileLink).toHaveAttribute('href', '/user/profile');
     });
 
     it('renders logout button inside a form with action attribute', () => {
-      const user = { userId: 'user-123', email: 'john@example.com' };
+      const user = { userId: 'user-123', email: 'john@example.com', username: 'johnny' };
       const { container } = render(<AuthNav user={user} />);
       
       const buttons = container.querySelectorAll('button');
@@ -33,7 +39,7 @@ describe('AuthNav', () => {
     });
 
     it('does not render login/signup links when authenticated', () => {
-      const user = { userId: 'user-123', email: 'john@example.com' };
+      const user = { userId: 'user-123', email: 'john@example.com', username: 'johnny' };
       render(<AuthNav user={user} />);
       
       expect(screen.queryByRole('link', { name: /log in/i })).not.toBeInTheDocument();
@@ -59,18 +65,15 @@ describe('AuthNav', () => {
       const logoutButton = Array.from(buttons).find(btn => btn.textContent?.includes('Log out'));
       expect(logoutButton).toBeUndefined();
       
-      const spans = container.querySelectorAll('span');
-      const hasEmail = Array.from(spans).some(span => span.textContent?.includes('@'));
-      expect(hasEmail).toBe(false);
+      expect(screen.queryByRole('link', { name: /johnny/i })).not.toBeInTheDocument();
     });
   });
 
   describe('Layout', () => {
-    it('renders branding text "B2B Quote Cart"', () => {
+    it('renders branding as a link to home page', () => {
       render(<AuthNav user={null} />);
-      const elements = screen.getAllByText('B2B Quote Cart');
-      expect(elements.length).toBeGreaterThan(0);
-      expect(elements[0]).toBeInTheDocument();
+      const brandingLink = screen.getByRole('link', { name: 'B2B Quote Cart' });
+      expect(brandingLink).toHaveAttribute('href', '/');
     });
 
     it('has flex layout with items-center justify-between classes', () => {
@@ -78,6 +81,19 @@ describe('AuthNav', () => {
       const wrapper = container.firstChild;
       
       expect(wrapper).toHaveClass('flex', 'items-center', 'justify-between');
+    });
+
+    it('renders a cart icon link to /quote-cart as the last item in the nav', () => {
+      const { container } = render(<AuthNav user={null} />);
+      const cartLink = screen.getByRole('link', { name: /view cart/i });
+      expect(cartLink).toHaveAttribute('href', '/quote-cart');
+
+      // cart icon must be the last child of the right-side nav group
+      const navGroup = container.querySelector('.flex.items-center.gap-3');
+      expect(navGroup?.lastElementChild).toBe(cartLink.closest('a'));
+
+      const { rerender } = render(<AuthNav user={{ userId: 'u1', email: 'a@b.com', username: 'alice' }} />);
+      expect(screen.getAllByRole('link', { name: /view cart/i })[1]).toHaveAttribute('href', '/quote-cart');
     });
   });
 });

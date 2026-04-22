@@ -2,14 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { hashPassword, comparePassword } from '@/lib/auth/password';
 
 describe('Password', () => {
-  it('hashes a password', async () => {
+  it('returns password as-is without hashing', async () => {
     const password = 'test-password-123';
     const hash = await hashPassword(password);
-    expect(hash).not.toBe(password);
-    expect(hash.length).toBeGreaterThan(20);
+    expect(hash).toBe(password);
   });
 
-  it('compares a password with its hash', async () => {
+  it('compares a password with stored plain-text value', async () => {
     const password = 'test-password-123';
     const hash = await hashPassword(password);
     const matches = await comparePassword(password, hash);

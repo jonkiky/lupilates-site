@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { cookies } from 'next/headers';
 import { verifyUserSessionValue, USER_SESSION_COOKIE_NAME } from '@/lib/auth/user-session';
+import { cancelUserQuoteAction } from '@/app/actions/quotes';
 import { getUserQuoteById } from '@/lib/repositories/users';
 
 export default async function UserQuoteDetailPage({
@@ -21,6 +22,11 @@ export default async function UserQuoteDetailPage({
   const quote = await getUserQuoteById(id, session.userId);
   if (!quote) {
     notFound();
+  }
+
+  async function handleCancelQuote() {
+    'use server';
+    await cancelUserQuoteAction({ id: quote.id });
   }
 
   return (
@@ -87,6 +93,17 @@ export default async function UserQuoteDetailPage({
             <h2 className="font-medium text-stone-950">Project Notes</h2>
             <p className="text-sm text-stone-700">{quote.projectNotes}</p>
           </div>
+        )}
+
+        {quote.status !== 'CLOSED' && (
+          <form action={handleCancelQuote} className="mt-6 border-t border-stone-200 pt-6">
+            <button
+              type="submit"
+              className="rounded-full border border-red-200 px-5 py-2.5 text-sm font-medium text-red-700 hover:bg-red-50"
+            >
+              Cancel quote
+            </button>
+          </form>
         )}
       </div>
     </main>

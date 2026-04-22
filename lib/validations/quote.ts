@@ -7,11 +7,11 @@ export const quoteItemSchema = z.object({
 });
 
 export const quoteRequestSchema = z.object({
-  customerName: z.string().min(1),
-  companyName: z.string().min(1),
-  email: z.string().email(),
-  phone: z.string().min(1),
-  region: z.string().min(1),
+  customerName: z.string().default(''),
+  companyName: z.string().default(''),
+  email: z.string().email().or(z.literal('')).default(''),
+  phone: z.string().default(''),
+  region: z.string().default(''),
   projectNotes: z.string().max(5000).default(''),
   items: z.array(quoteItemSchema).min(1),
 });

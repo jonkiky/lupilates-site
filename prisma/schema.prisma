@@ -23,7 +23,7 @@ enum QuoteStatus {
 }
 
 model Category {
-  id        String     @id @default(cuid())
+  id        String     @id // Allow explicit IDs
   name      String
   slug      String     @unique
   parentId  String?
@@ -45,16 +45,27 @@ model Product {
   categoryId       String
   category         Category                @relation(fields: [categoryId], references: [id])
   specsJson        Json
-  imageUrls        Json
   availabilityText String
   visibilityStatus ProductVisibilityStatus @default(DRAFT)
   isFeatured       Boolean                 @default(false)
   createdAt        DateTime                @default(now())
   updatedAt        DateTime                @updatedAt
   quoteItems       QuoteItem[]
+  images           ProductImage[]
 
   @@index([categoryId])
   @@index([visibilityStatus, isFeatured])
+}
+
+model ProductImage {
+  id        String   @id @default(cuid())
+  url       String
+  sortOrder Int      @default(0)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([productId])
 }
 
 model User {
@@ -62,6 +73,7 @@ model User {
   email         String         @unique
   username      String
   phone         String?
+  wechat        String?
   passwordHash  String
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt

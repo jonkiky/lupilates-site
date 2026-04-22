@@ -4,8 +4,26 @@ import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 import { saveProduct, cloneProduct, hideProduct } from '@/app/actions/products';
 
+function toAutoSlug(value: string) {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .replace(/-{2,}/g, '-');
+}
+
+function generateRandomSKU(): string {
+  return String(Math.floor(Math.random() * 900000) + 100000);
+}
+
+const CATEGORIES = [
+  { id: 'general', name: 'General' },
+  { id: 'company-branding', name: 'Company Branding' },
+  { id: 'pets', name: 'Pets' },
+];
+
 type ProductFormProps = {
-  categories: Array<{ id: string; name: string }>;
   initialValues?: {
     id?: string;
     sku: string;
@@ -21,9 +39,13 @@ type ProductFormProps = {
   };
 };
 
-export function ProductForm({ categories, initialValues }: ProductFormProps) {
+export function ProductForm({ initialValues }: ProductFormProps) {
   const router = useRouter();
+  const isNewProduct = !initialValues?.id;
   const [imageUrls, setImageUrls] = useState<string[]>(initialValues?.imageUrls ?? []);
+  const [nameValue, setNameValue] = useState(initialValues?.name ?? '');
+  const [slugValue, setSlugValue] = useState(initialValues?.slug ?? '');
+  const [skuValue, setSkuValue] = useState(initialValues?.sku ?? (isNewProduct ? generateRandomSKU() : ''));
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -33,6 +55,10 @@ export function ProductForm({ categories, initialValues }: ProductFormProps) {
   async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (imageUrls.length >= 8) {
+      setError('Maximum 8 images allowed.');
+      return;
+    }
     setUploading(true);
     setError(null);
     try {
@@ -49,36 +75,44 @@ export function ProductForm({ categories, initialValues }: ProductFormProps) {
     }
   }
 
+  function handleNameChange(nextName: string) {
+    setNameValue(nextName);
+
+    if (!isNewProduct) {
+      return;
+    }
+
+    const generatedSlug = toAutoSlug(nextName);
+    setSlugValue(generatedSlug);
+  }
+
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
     setSaving(true);
     const form = new FormData(e.currentTarget);
 
-    let specsJson: Record<string, unknown> = {};
     try {
-      const raw = form.get('specsJson') as string;
-      if (raw.trim()) specsJson = JSON.parse(raw) as Record<string, unknown>;
-    } catch {
-      setError('Specs must be valid JSON.');
-      setSaving(false);
-      return;
-    }
-
-    try {
-      await saveProduct({
+      const result = await saveProduct({
         ...(initialValues?.id ? { id: initialValues.id } : {}),
         sku: form.get('sku') as string,
         name: form.get('name') as string,
         slug: form.get('slug') as string,
         description: form.get('description') as string,
         categoryId: form.get('categoryId') as string,
-        specsJson,
+        specsJson: {},
         imageUrls,
-        availabilityText: form.get('availabilityText') as string,
+        availabilityText: 'Available',
         visibilityStatus: form.get('visibilityStatus') as string,
         isFeatured: form.get('isFeatured') === 'on',
       });
+
+      if (!result.success) {
+        setError(result.error);
+        setSaving(false);
+        return;
+      }
+
       router.push('/admin/products');
     } catch {
       setError('Failed to save product. Check all fields.');
@@ -91,21 +125,39 @@ export function ProductForm({ categories, initialValues }: ProductFormProps) {
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="grid gap-1">
           <label className="text-xs font-medium text-stone-600">SKU *</label>
-          <input name="sku" required defaultValue={initialValues?.sku} className={inputClass} />
+          <input
+            name="sku"
+            required
+            value={skuValue}
+            onChange={(e) => setSkuValue(e.target.value)}
+            className={inputClass}
+          />
         </div>
         <div className="grid gap-1">
           <label className="text-xs font-medium text-stone-600">Name *</label>
-          <input name="name" required defaultValue={initialValues?.name} className={inputClass} />
+          <input
+            name="name"
+            required
+            value={nameValue}
+            onChange={(e) => handleNameChange(e.target.value)}
+            className={inputClass}
+          />
         </div>
         <div className="grid gap-1">
           <label className="text-xs font-medium text-stone-600">Slug *</label>
-          <input name="slug" required defaultValue={initialValues?.slug} className={inputClass} />
+          <input
+            name="slug"
+            required
+            value={slugValue}
+            onChange={(e) => setSlugValue(e.target.value)}
+            className={inputClass}
+          />
         </div>
         <div className="grid gap-1">
-          <label className="text-xs font-medium text-stone-600">Category</label>
-          <select name="categoryId" defaultValue={initialValues?.categoryId ?? ''} className={inputClass}>
-            <option value="">— none —</option>
-            {categories.map((c) => (
+          <label className="text-xs font-medium text-stone-600">Category *</label>
+          <select name="categoryId" required defaultValue={initialValues?.categoryId ?? ''} className={inputClass}>
+            <option value="" disabled>— select category —</option>
+            {CATEGORIES.map((c) => (
               <option key={c.id} value={c.id}>{c.name}</option>
             ))}
           </select>
@@ -113,19 +165,6 @@ export function ProductForm({ categories, initialValues }: ProductFormProps) {
         <div className="grid gap-1 sm:col-span-2">
           <label className="text-xs font-medium text-stone-600">Description</label>
           <textarea name="description" rows={3} defaultValue={initialValues?.description} className={`${inputClass} resize-none`} />
-        </div>
-        <div className="grid gap-1 sm:col-span-2">
-          <label className="text-xs font-medium text-stone-600">Specs (JSON)</label>
-          <textarea
-            name="specsJson"
-            rows={4}
-            defaultValue={JSON.stringify(initialValues?.specsJson ?? {}, null, 2)}
-            className={`${inputClass} resize-none font-mono text-xs`}
-          />
-        </div>
-        <div className="grid gap-1">
-          <label className="text-xs font-medium text-stone-600">Availability text</label>
-          <input name="availabilityText" defaultValue={initialValues?.availabilityText} className={inputClass} />
         </div>
         <div className="grid gap-1">
           <label className="text-xs font-medium text-stone-600">Visibility</label>
@@ -156,9 +195,9 @@ export function ProductForm({ categories, initialValues }: ProductFormProps) {
             </div>
           ))}
         </div>
-        <label className="flex w-fit cursor-pointer items-center gap-2 rounded-full border border-stone-300 px-4 py-2 text-sm text-stone-600 hover:bg-stone-50">
-          {uploading ? 'Uploading…' : 'Upload image'}
-          <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handleImageUpload} className="sr-only" disabled={uploading} />
+        <label className={`flex w-fit cursor-pointer items-center gap-2 rounded-full border border-stone-300 px-4 py-2 text-sm text-stone-600 hover:bg-stone-50 ${imageUrls.length >= 8 ? 'opacity-40 cursor-not-allowed' : ''}`}>
+          {uploading ? 'Uploading…' : imageUrls.length >= 8 ? 'Max 8 images reached' : 'Upload image'}
+          <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={handleImageUpload} className="sr-only" disabled={uploading || imageUrls.length >= 8} />
         </label>
       </div>
 

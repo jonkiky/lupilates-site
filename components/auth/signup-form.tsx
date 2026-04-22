@@ -4,21 +4,26 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { signupAction } from '@/app/actions/user-auth';
 
+type SignupFieldErrors = Partial<Record<'email' | 'username' | 'phone' | 'wechat' | 'password' | 'confirmPassword', string[]>>;
+
 export function SignupForm() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<SignupFieldErrors>({});
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
     setError('');
+    setFieldErrors({});
 
     const formData = new FormData(e.currentTarget);
     const input = {
       email: formData.get('email'),
       username: formData.get('username'),
       phone: formData.get('phone'),
+      wechat: formData.get('wechat'),
       password: formData.get('password'),
       confirmPassword: formData.get('confirmPassword'),
     };
@@ -30,7 +35,14 @@ export function SignupForm() {
       router.push('/user/dashboard');
     } else {
       setError(result.error || 'An error occurred during signup');
+      setFieldErrors(result.fieldErrors ?? {});
     }
+  }
+
+  function renderFieldError(fieldName: keyof SignupFieldErrors) {
+    const message = fieldErrors[fieldName]?.[0];
+    if (!message) return null;
+    return <p className="mt-1 text-sm text-red-700">{message}</p>;
   }
 
   return (
@@ -49,6 +61,7 @@ export function SignupForm() {
           className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm outline-none focus:border-stone-500"
           placeholder="you@company.com"
         />
+        {renderFieldError('email')}
       </div>
 
       <div>
@@ -61,6 +74,7 @@ export function SignupForm() {
           className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm outline-none focus:border-stone-500"
           placeholder="Your name"
         />
+        {renderFieldError('username')}
       </div>
 
       <div>
@@ -72,6 +86,19 @@ export function SignupForm() {
           className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm outline-none focus:border-stone-500"
           placeholder="+1 (555) 000-0000"
         />
+        {renderFieldError('phone')}
+      </div>
+
+      <div>
+        <label htmlFor="wechat" className="block text-sm font-medium text-stone-700">WeChat (optional)</label>
+        <input
+          id="wechat"
+          name="wechat"
+          type="text"
+          className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm outline-none focus:border-stone-500"
+          placeholder="WeChat ID"
+        />
+        {renderFieldError('wechat')}
       </div>
 
       <div>
@@ -84,6 +111,7 @@ export function SignupForm() {
           className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm outline-none focus:border-stone-500"
           placeholder="At least 8 characters"
         />
+        {renderFieldError('password')}
       </div>
 
       <div>
@@ -96,6 +124,7 @@ export function SignupForm() {
           className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm outline-none focus:border-stone-500"
           placeholder="Confirm password"
         />
+        {renderFieldError('confirmPassword')}
       </div>
 
       <button

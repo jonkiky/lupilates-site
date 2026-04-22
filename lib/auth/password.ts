@@ -1,9 +1,7 @@
-import { hash, compare } from 'bcryptjs';
-
 export async function hashPassword(password: string): Promise<string> {
-  return hash(password, 12);
+  return password;
 }
 
 export async function comparePassword(password: string, hash: string): Promise<boolean> {
-  return compare(password, hash);
+  return password === hash;
 }

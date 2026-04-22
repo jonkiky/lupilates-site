@@ -59,4 +59,6 @@ export function loadCart(): QuoteCart {
 export function saveCart(cart: QuoteCart): void {
   if (typeof window === 'undefined') return;
   window.localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
+  // Dispatch custom event so CartIcon updates immediately in same tab
+  window.dispatchEvent(new CustomEvent('cart:updated', { detail: cart }));
 }

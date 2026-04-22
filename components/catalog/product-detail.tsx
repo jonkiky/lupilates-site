@@ -1,9 +1,9 @@
 'use client';
 
 import Image from 'next/image';
-import Link from 'next/link';
 import { useState } from 'react';
 import { loadCart, addItem, saveCart } from '@/lib/quote/cart-store';
+import { AuthNav } from '@/components/header/auth-nav';
 
 type Product = {
   id: string;
@@ -12,14 +12,16 @@ type Product = {
   description: string;
   availabilityText: string;
   specsJson: unknown;
-  imageUrls: unknown;
+  images: { url: string }[];
   category: { name: string } | null;
 };
 
-type Props = { product: Product };
+type User = { userId: string; email: string; username?: string } | null;
 
-export function ProductDetail({ product }: Props) {
-  const images = Array.isArray(product.imageUrls) ? (product.imageUrls as string[]) : [];
+type Props = { product: Product; user: User };
+
+export function ProductDetail({ product, user }: Props) {
+  const images = product.images.map((img) => img.url);
   const specs = product.specsJson && typeof product.specsJson === 'object' ? product.specsJson as Record<string, string> : {};
   const [activeImage, setActiveImage] = useState(0);
   const [showNotification, setShowNotification] = useState(false);
@@ -39,8 +41,9 @@ export function ProductDetail({ product }: Props) {
   }
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-      <div className="grid gap-8 lg:grid-cols-2">
+    <main className="mx-auto max-w-6xl py-8">
+      <AuthNav user={user} />
+      <div className="mt-8 grid gap-8 px-4 sm:px-6 lg:px-8 lg:grid-cols-2">
         {/* Image panel */}
         <div className="flex flex-col gap-3">
           <div className="relative aspect-square overflow-hidden rounded-3xl bg-stone-100">
@@ -87,12 +90,6 @@ export function ProductDetail({ product }: Props) {
           >
             Add to quote cart
           </button>
-          <Link
-            href="/quote-cart"
-            className="mt-2 inline-block text-center rounded-full border border-stone-200 px-6 py-3 text-sm font-medium text-stone-900 hover:bg-stone-50"
-          >
-            View cart
-          </Link>
         </div>
       </div>
 

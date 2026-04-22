@@ -1,21 +1,27 @@
 import Link from 'next/link';
 import { logoutAction } from '@/app/actions/user-auth';
+import { CartIcon } from '@/components/header/cart-icon';
 
 interface AuthNavProps {
   user: {
     userId: string;
     email: string;
+    username?: string;
   } | null;
 }
 
 export const AuthNav = ({ user }: AuthNavProps) => {
   return (
     <div className="flex items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
-      <p className="text-sm font-medium text-stone-600">B2B Quote Cart</p>
-      <div className="flex gap-3">
+      <Link href="/" className="text-sm font-medium text-stone-600 hover:text-stone-900">
+        B2B Quote Cart
+      </Link>
+      <div className="flex items-center gap-3">
         {user ? (
           <>
-            <span className="text-sm font-medium text-stone-700">{user.email}</span>
+            <Link href="/user/profile" className="text-sm font-medium text-stone-700 hover:text-stone-900">
+              {user.username ?? user.email}
+            </Link>
             <form action={logoutAction}>
               <button
                 type="submit"
@@ -38,6 +44,7 @@ export const AuthNav = ({ user }: AuthNavProps) => {
             </Link>
           </>
         )}
+        <CartIcon />
       </div>
     </div>
   );

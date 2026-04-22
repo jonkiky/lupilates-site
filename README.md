@@ -13,8 +13,9 @@ A Next.js B2B web application for browsing 3D printing products and submitting q
 ## Tech Stack
 
 - **Next.js 15** (App Router, Server Components, Server Actions)
-- **Prisma** + **Vercel Postgres**
-- **Vercel Blob** for product image storage
+- **Prisma** + **Postgres** (Neon)
+- **Cloudflare R2** for product image storage
+- **AWS SDK S3 Client** for R2 S3-compatible API
 - **Tailwind CSS** for mobile-first responsive design
 - **Vitest** for unit and integration tests
 - **Playwright** for E2E tests
@@ -25,7 +26,12 @@ A Next.js B2B web application for browsing 3D printing products and submitting q
 |---|---|
 | `DATABASE_URL` | Primary Postgres connection string |
 | `DATABASE_URL_UNPOOLED` | Direct Postgres connection string (for migrations) |
-| `BLOB_READ_WRITE_TOKEN` | Vercel Blob token for image uploads |
+| `R2_ACCOUNT_ID` | Cloudflare R2 Account ID |
+| `R2_BUCKET_NAME` | Cloudflare R2 bucket name for images |
+| `R2_ACCESS_KEY_ID` | Cloudflare R2 access key ID |
+| `R2_SECRET_ACCESS_KEY` | Cloudflare R2 secret access key |
+| `R2_ENDPOINT_URL` | Cloudflare R2 S3 API endpoint URL |
+| `R2_PUBLIC_URL` | Cloudflare R2 public domain URL |
 | `ADMIN_USERNAME` | Admin login username |
 | `ADMIN_PASSWORD` | Admin login password |
 | `SESSION_SECRET` | Secret key for HMAC-signed session cookies |

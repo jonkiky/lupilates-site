@@ -14,7 +14,7 @@ export default async function QuoteCartPage() {
   if (session) {
     const dbUser = await getUserById(session.userId);
     if (dbUser) {
-      user = { userId: dbUser.id, email: dbUser.email };
+      user = { userId: dbUser.id, email: dbUser.email, username: dbUser.username };
     }
   }
 

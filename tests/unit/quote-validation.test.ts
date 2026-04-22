@@ -8,16 +8,16 @@ describe('quoteRequestSchema', () => {
     expect(result.success).toBe(false);
   });
 
-  it('rejects missing customer name', () => {
+  it('accepts empty contact fields when cart has items', () => {
     const result = quoteRequestSchema.safeParse({
       customerName: '',
-      companyName: 'Acme',
-      email: 'test@example.com',
-      phone: '123',
-      region: 'US',
+      companyName: '',
+      email: '',
+      phone: '',
+      region: '',
       items: [{ productId: 'p1', quantity: 1, itemNotes: '' }],
     });
-    expect(result.success).toBe(false);
+    expect(result.success).toBe(true);
   });
 });
 

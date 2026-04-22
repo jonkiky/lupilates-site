@@ -53,24 +53,24 @@ export function QuoteRequestForm() {
     <form onSubmit={handleSubmit} className="mt-6 grid gap-4">
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="grid gap-1">
-          <label className="text-xs font-medium text-stone-600">Name *</label>
-          <input name="customerName" required className={inputClass} />
+          <label className="text-xs font-medium text-stone-600">Name</label>
+          <input name="customerName" className={inputClass} />
         </div>
         <div className="grid gap-1">
-          <label className="text-xs font-medium text-stone-600">Company *</label>
-          <input name="companyName" required className={inputClass} />
+          <label className="text-xs font-medium text-stone-600">Company</label>
+          <input name="companyName" className={inputClass} />
         </div>
         <div className="grid gap-1">
-          <label className="text-xs font-medium text-stone-600">Email *</label>
-          <input name="email" type="email" required className={inputClass} />
+          <label className="text-xs font-medium text-stone-600">Email</label>
+          <input name="email" type="email" className={inputClass} />
         </div>
         <div className="grid gap-1">
-          <label className="text-xs font-medium text-stone-600">Phone *</label>
-          <input name="phone" type="tel" required className={inputClass} />
+          <label className="text-xs font-medium text-stone-600">Phone</label>
+          <input name="phone" type="tel" className={inputClass} />
         </div>
         <div className="grid gap-1">
-          <label className="text-xs font-medium text-stone-600">Region *</label>
-          <input name="region" required className={inputClass} />
+          <label className="text-xs font-medium text-stone-600">Region</label>
+          <input name="region" className={inputClass} />
         </div>
       </div>
       <div className="grid gap-1">

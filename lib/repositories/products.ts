@@ -15,7 +15,7 @@ export async function listPublishedProducts(input: { search?: string; category?:
         : {}),
       ...(input.category ? { category: { slug: input.category } } : {}),
     },
-    include: { category: true },
+    include: { category: true, images: { orderBy: { sortOrder: 'asc' } } },
     orderBy: [{ isFeatured: 'desc' }, { updatedAt: 'desc' }],
   });
 }
@@ -23,19 +23,19 @@ export async function listPublishedProducts(input: { search?: string; category?:
 export async function getPublishedProductBySlug(slug: string) {
   return db.product.findFirst({
     where: { slug, visibilityStatus: ProductVisibilityStatus.PUBLISHED },
-    include: { category: true },
+    include: { category: true, images: { orderBy: { sortOrder: 'asc' } } },
   });
 }
 
 export async function listAllProducts() {
   return db.product.findMany({
-    include: { category: true },
+    include: { category: true, images: { orderBy: { sortOrder: 'asc' } } },
     orderBy: { updatedAt: 'desc' },
   });
 }
 
 export async function getProductById(id: string) {
-  return db.product.findUnique({ where: { id }, include: { category: true } });
+  return db.product.findUnique({ where: { id }, include: { category: true, images: { orderBy: { sortOrder: 'asc' } } } });
 }
 
 export async function upsertProduct(data: {
@@ -51,31 +51,49 @@ export async function upsertProduct(data: {
   visibilityStatus: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
   isFeatured: boolean;
 }) {
-  const { id, ...rest } = data;
+  const { id, imageUrls, ...rest } = data;
   const payload = {
     ...rest,
     specsJson: rest.specsJson as object,
-    imageUrls: rest.imageUrls as object,
   };
   if (id) {
-    return db.product.update({ where: { id }, data: payload });
+    // Replace all images: delete existing then create new ones
+    await db.productImage.deleteMany({ where: { productId: id } });
+    const updated = await db.product.update({ where: { id }, data: payload });
+    if (imageUrls.length > 0) {
+      await db.productImage.createMany({
+        data: imageUrls.map((url, i) => ({ url, sortOrder: i, productId: id })),
+      });
+    }
+    return updated;
   }
-  return db.product.create({ data: payload });
+  const created = await db.product.create({ data: payload });
+  if (imageUrls.length > 0) {
+    await db.productImage.createMany({
+      data: imageUrls.map((url, i) => ({ url, sortOrder: i, productId: created.id })),
+    });
+  }
+  return created;
 }
 
 export async function duplicateProduct(id: string) {
-  const source = await db.product.findUniqueOrThrow({ where: { id } });
-  const { id: _id, createdAt: _createdAt, updatedAt: _updatedAt, ...rest } = source;
-  return db.product.create({
+  const source = await db.product.findUniqueOrThrow({ where: { id }, include: { images: { orderBy: { sortOrder: 'asc' } } } });
+  const { id: _id, createdAt: _createdAt, updatedAt: _updatedAt, images, ...rest } = source;
+  const copy = await db.product.create({
     data: {
       ...rest,
       sku: `${rest.sku}-copy`,
       slug: `${rest.slug}-copy`,
       visibilityStatus: 'DRAFT',
       specsJson: rest.specsJson ?? {},
-      imageUrls: rest.imageUrls ?? [],
     },
   });
+  if (images.length > 0) {
+    await db.productImage.createMany({
+      data: images.map((img) => ({ url: img.url, sortOrder: img.sortOrder, productId: copy.id })),
+    });
+  }
+  return copy;
 }
 
 export async function archiveProduct(id: string) {

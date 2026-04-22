@@ -25,6 +25,20 @@ describe('submitQuoteRequest', () => {
     expect(result.quoteNumber).toBe('Q-1001');
   });
 
+  it('accepts empty contact fields when items are present', async () => {
+    const result = await submitQuoteRequest({
+      customerName: '',
+      companyName: '',
+      email: '',
+      phone: '',
+      region: '',
+      projectNotes: '',
+      items: [{ productId: 'p1', quantity: 1, itemNotes: '' }],
+    });
+
+    expect(result.quoteNumber).toBe('Q-1001');
+  });
+
   it('throws ZodError when payload is invalid', async () => {
     await expect(submitQuoteRequest({ items: [] })).rejects.toThrow();
   });
