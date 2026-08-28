@@ -1,7 +1,7 @@
 # Expo Plan
 
 ## Objective
-Build the Pilates training app in `expo/my-app` using Expo Router + Firebase + Expo Notifications, with full USER and ADMIN workflows.
+Build the Pilates training app in `expo/lu-training` using Expo Router + Firebase + Expo Notifications, with full USER and ADMIN workflows.
 
 ## References
 - UI mock: `docs/UI/pilates-app-ui.html`
@@ -20,7 +20,7 @@ Build the Pilates training app in `expo/my-app` using Expo Router + Firebase + E
   - `firebase login`
 
 ### Local Project Bootstrap
-1. Open project root: `expo/my-app`.
+1. Open project root: `expo/lu-training`.
 2. Install dependencies:
   - `npm install`
 3. Start app:
@@ -33,7 +33,7 @@ Build the Pilates training app in `expo/my-app` using Expo Router + Firebase + E
   - `npm run lint`
 
 ### Environment Variables
-Create `.env.local` in `expo/my-app` and define Expo public Firebase keys:
+Create `.env.local` in `expo/lu-training` and define Expo public Firebase keys:
 
 ```bash
 EXPO_PUBLIC_FIREBASE_API_KEY=your_api_key
@@ -42,6 +42,7 @@ EXPO_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
 EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project.firebasestorage.app
 EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
 EXPO_PUBLIC_FIREBASE_APP_ID=your_app_id
+EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID=your_measurement_id
 ```
 
 Notes:

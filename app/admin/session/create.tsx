@@ -1,15 +1,15 @@
 import { useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  TextInput,
-  View,
+    ActivityIndicator,
+    Alert,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    TextInput,
+    View,
 } from 'react-native';
 
-import { addDays, addHours, format, parse, setHours, setMinutes } from 'date-fns';
+import { addDays, addHours, format, isValid, parse, setHours, setMinutes } from 'date-fns';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import { ThemedText } from '@/components/themed-text';
@@ -41,11 +41,12 @@ export default function AdminCreateSessionScreen() {
   const [loadingNotes, setLoadingNotes] = useState(false);
 
   // Derived
-  const startsAt = (() => {
-    const d = parse(dateStr, 'yyyy-MM-dd', new Date());
-    return setMinutes(setHours(d, hour), minute);
-  })();
-  const endsAt = addHours(startsAt, 1);
+  const parsedDate = parse(dateStr, 'yyyy-MM-dd', new Date());
+  const isDateValid = isValid(parsedDate) && dateStr.length === 10;
+  const startsAt = isDateValid
+    ? setMinutes(setHours(parsedDate, hour), minute)
+    : null;
+  const endsAt = startsAt ? addHours(startsAt, 1) : null;
 
   // Listen to users for picker
   useEffect(() => {
@@ -87,6 +88,10 @@ export default function AdminCreateSessionScreen() {
       return;
     }
     if (!profile?.uid) return;
+    if (!startsAt || !endsAt) {
+      Alert.alert('Error', 'Please enter a valid date in YYYY-MM-DD format.');
+      return;
+    }
 
     const payload = {
       userId: selectedUser.uid,
@@ -288,8 +293,9 @@ export default function AdminCreateSessionScreen() {
         <View style={styles.previewRow}>
           <ThemedText style={styles.previewLabel}>Session:</ThemedText>
           <ThemedText style={styles.previewValue}>
-            {format(startsAt, 'MMM d, yyyy')} · {format(startsAt, 'h:mm a')} –{' '}
-            {format(endsAt, 'h:mm a')}
+            {startsAt
+              ? `${format(startsAt, 'MMM d, yyyy')} · ${format(startsAt, 'h:mm a')} – ${format(endsAt!, 'h:mm a')}`
+              : 'Enter a valid date (YYYY-MM-DD)'}
           </ThemedText>
         </View>
 

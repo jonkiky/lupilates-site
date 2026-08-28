@@ -5,7 +5,7 @@
 This implementation document is based on:
 - UI source: `docs/UI/pilates-app-ui.html`
 - System design source: `docs/system-design-expo-firebase-notifications.md`
-- Current Expo app baseline: `expo/my-app` (Expo Router starter with Firebase and Notifications dependencies already installed)
+- Current Expo app baseline: `expo/lu-training` (Expo Router starter with Firebase and Notifications dependencies already installed)
 
 Goal:
 - Translate UI and architecture into an implementation-ready plan for pages, folder/file structure, functions, and runtime behavior.

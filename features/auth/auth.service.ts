@@ -6,8 +6,17 @@ import { firebaseAuth } from '@/lib/firebase/auth';
 import { userDocRef } from '@/lib/firebase/collections';
 import type { UserProfile } from '@/types/domain';
 
+// Expo only inlines STATIC `process.env.EXPO_PUBLIC_*` member expressions at build
+// time. A computed access like `process.env[name]` is left as-is and resolves to
+// undefined in release bundles, so every var must be read statically here.
+const ENV = {
+  EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+  EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
+  EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
+} as const;
+
 function getRequiredEnv(name: 'EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID'): string {
-  const rawValue = process.env[name];
+  const rawValue = ENV[name];
 
   if (!rawValue) {
     throw new Error(`[auth] Missing required environment variable: ${name}`);
@@ -23,7 +32,7 @@ function getRequiredEnv(name: 'EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID'): string {
 }
 
 function getOptionalEnv(name: 'EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID' | 'EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID') {
-  const rawValue = process.env[name];
+  const rawValue = ENV[name];
   const value = rawValue?.trim().replace(/^['\"]|['\"]$/g, '');
   return value && value.length > 0 ? value : undefined;
 }
