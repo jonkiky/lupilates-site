@@ -78,23 +78,30 @@ Secrets are scoped per EAS project. Ones set against an older project do not car
 
 ---
 
-## Phase 3 — Fill the App Store metadata gaps in `app.json`
+## Phase 3 — `app.json` metadata
 
-Two items from the guide are still outstanding:
+Verified against the source on 2026-08-28: **the two items in
+`app-store-release-guide.md` §1.2/§1.3 do not apply to this app.**
 
-**3a. Usage descriptions.** Add under `expo.ios.infoPlist` — only the permissions the
-app actually requests. Apple rejects builds that trigger a permission prompt with no
-description string.
+**Usage descriptions — not needed.** No camera, photo library, location, contacts, or
+`expo-calendar` usage anywhere in `app/`, `components/`, `features/`, `hooks/`, `lib/`
+or `store/`. The only permission-adjacent dependency is `expo-auth-session`, which
+needs none. The grep hits for "Calendar" are the app's own calendar UI components, not
+the iOS Calendar API. iOS notification permission requires no Info.plist string.
+Adding unused usage descriptions invites App Review questions about permissions the
+app never requests — leave them out.
 
-**3b. Notification plugin config.** `expo-notifications` is listed as a bare string.
-Give it an icon and color so notifications don't render with a grey default:
+**`expo-notifications` icon/color — Android-only.** The config plugin's `icon` and
+`color` props configure the Android status-bar notification icon and accent color; they
+do nothing on iOS. `assets/images/notification-icon.png` doesn't exist either. Leave
+the plugin as the bare string `"expo-notifications"` for an iOS-only release. Revisit
+when shipping Android.
 
-```json
-[
-  "expo-notifications",
-  { "icon": "./assets/images/notification-icon.png", "color": "#4F46E5" }
-]
-```
+**What was actually worth adding — done.** `ios.infoPlist.ITSAppUsesNonExemptEncryption:
+false`, which declares the app uses only exempt encryption (HTTPS). Without it, App
+Store Connect asks the export-compliance question on **every** TestFlight upload and
+holds the build until answered. This is accurate here: the app talks to Firebase and
+Google over HTTPS and implements no custom crypto.
 
 `ios.buildNumber` is **not** needed — `eas.json` sets `"appVersionSource": "remote"`,
 so EAS owns the build number and `production.autoIncrement` bumps it each build.
@@ -176,8 +183,9 @@ npx eas-cli submit --platform ios --latest
 Then in App Store Connect → TestFlight:
 
 1. Wait for processing (10-30 min; you get an email).
-2. Answer the **export compliance** question — the app uses HTTPS only, which is
-   exempt; answer accordingly.
+2. Export compliance — no prompt, since Phase 3 set
+   `ITSAppUsesNonExemptEncryption: false`. If you are ever asked, the app uses HTTPS
+   only, which is exempt.
 3. Add internal testers (up to 100, no review needed) and install.
 
 **Gate:** Build installable via TestFlight on a device that has never run a dev build.

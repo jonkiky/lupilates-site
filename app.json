@@ -12,6 +12,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.lucreation.cms",
       "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
         "CFBundleURLTypes": [
           {
             "CFBundleURLSchemes": [
