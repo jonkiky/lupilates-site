@@ -60,7 +60,7 @@ export default function UserSettingsScreen() {
       await saveNotificationPreference({ uid: profile.uid, enabled: value, reminderRule });
       dispatch(preferenceUpdated({ enabled: value, reminderRule }));
       // Reschedule reminders with the new preference
-      const pref = { uid: profile.uid, enabled: value, reminderRule, updatedAt: new Date() };
+      const pref = { uid: profile.uid, enabled: value, reminderRule, updatedAt: new Date().toISOString() };
       await syncSessionReminders(upcomingSessions, pref);
     } catch {
       setNotificationsEnabled(!value); // revert
@@ -79,7 +79,7 @@ export default function UserSettingsScreen() {
       await saveNotificationPreference({ uid: profile.uid, enabled: notificationsEnabled, reminderRule: rule });
       dispatch(preferenceUpdated({ enabled: notificationsEnabled, reminderRule: rule }));
       // Reschedule reminders with the new rule
-      const pref = { uid: profile.uid, enabled: notificationsEnabled, reminderRule: rule, updatedAt: new Date() };
+      const pref = { uid: profile.uid, enabled: notificationsEnabled, reminderRule: rule, updatedAt: new Date().toISOString() };
       await syncSessionReminders(upcomingSessions, pref);
     } catch {
       setReminderRule(prev); // revert
