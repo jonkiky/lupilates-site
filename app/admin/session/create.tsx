@@ -54,12 +54,15 @@ export default function AdminCreateSessionScreen() {
     return unsubscribe;
   }, [dispatch]);
 
+  const activeUsers = users.filter(
+    (u) => u.role === 'USER' && u.status === 'IN_TRAINING',
+  );
   const filteredUsers = userSearch.trim()
-    ? users.filter((u) => {
+    ? activeUsers.filter((u) => {
         const q = userSearch.toLowerCase();
         return u.displayName.toLowerCase().includes(q) || u.email.toLowerCase().includes(q);
       })
-    : users;
+    : activeUsers;
 
   // Fetch recent training notes when user is selected
   useEffect(() => {

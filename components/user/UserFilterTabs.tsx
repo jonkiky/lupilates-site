@@ -1,24 +1,28 @@
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import type { UserStatus } from '@/types/domain';
 
-type FilterTab = UserStatus | 'ALL';
+export type UserFilterTab = UserStatus | 'ALL' | 'ADMIN';
 
 interface UserFilterTabsProps {
-  active: FilterTab;
-  onChange: (tab: FilterTab) => void;
+  active: UserFilterTab;
+  onChange: (tab: UserFilterTab) => void;
 }
 
-const TABS: { value: FilterTab; label: string }[] = [
+const TABS: { value: UserFilterTab; label: string }[] = [
   { value: 'ALL', label: 'All' },
   { value: 'IN_TRAINING', label: 'In Training' },
   { value: 'INACTIVE', label: 'Inactive' },
+  { value: 'ADMIN', label: 'Admin' },
 ];
 
 export function UserFilterTabs({ active, onChange }: UserFilterTabsProps) {
   return (
-    <View style={styles.row}>
+    <ScrollView
+      horizontal
+      contentContainerStyle={styles.row}
+      showsHorizontalScrollIndicator={false}>
       {TABS.map((tab) => {
         const isActive = active === tab.value;
         return (
@@ -32,7 +36,7 @@ export function UserFilterTabs({ active, onChange }: UserFilterTabsProps) {
           </Pressable>
         );
       })}
-    </View>
+    </ScrollView>
   );
 }
 

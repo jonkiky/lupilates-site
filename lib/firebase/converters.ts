@@ -20,8 +20,61 @@ import type {
     UserProfileDto,
 } from '@/types/dto';
 
-function toISOString(value: Timestamp): string {
-  return value.toDate().toISOString();
+const UNKNOWN_DATE_ISO = new Date(0).toISOString();
+
+type LegacyUserProfileDto = Partial<UserProfileDto> & {
+  username?: unknown;
+  displayName?: unknown;
+  createdAt?: unknown;
+  updatedAt?: unknown;
+};
+
+function toNonEmptyString(value: unknown): string | undefined {
+  if (typeof value !== 'string') return undefined;
+
+  const normalized = value.trim();
+  return normalized.length > 0 ? normalized : undefined;
+}
+
+function toISOString(value: unknown): string {
+  let date: Date;
+
+  if (value instanceof Timestamp) {
+    date = value.toDate();
+  } else if (value instanceof Date) {
+    date = value;
+  } else if (typeof value === 'string') {
+    date = new Date(value);
+  } else if (
+    typeof value === 'object' &&
+    value !== null &&
+    'seconds' in value &&
+    typeof value.seconds === 'number'
+  ) {
+    const nanoseconds =
+      'nanoseconds' in value && typeof value.nanoseconds === 'number'
+        ? value.nanoseconds
+        : 0;
+    date = new Date(value.seconds * 1_000 + nanoseconds / 1_000_000);
+  } else {
+    throw new TypeError('Expected a Firestore Timestamp, timestamp-shaped object, Date, or ISO date string.');
+  }
+
+  if (Number.isNaN(date.getTime())) {
+    throw new TypeError('Expected a valid Firestore date value.');
+  }
+
+  return date.toISOString();
+}
+
+function toOptionalISOString(value: unknown): string | undefined {
+  if (value === null || value === undefined) return undefined;
+
+  try {
+    return toISOString(value);
+  } catch {
+    return undefined;
+  }
 }
 
 function toTimestamp(value: string): Timestamp {
@@ -42,16 +95,27 @@ export const userProfileConverter: FirestoreDataConverter<UserProfile, UserProfi
     };
   },
   fromFirestore(snapshot: QueryDocumentSnapshot<DocumentData, DocumentData>, options: SnapshotOptions): UserProfile {
-    const data = snapshot.data(options) as UserProfileDto;
+    const data = snapshot.data(options) as LegacyUserProfileDto;
+    const email = toNonEmptyString(data.email) ?? '';
+    const displayName =
+      toNonEmptyString(data.display_name) ??
+      toNonEmptyString(data.username) ??
+      toNonEmptyString(data.displayName) ??
+      toNonEmptyString(email.split('@')[0]) ??
+      'Unknown User';
+    const role = data.role === 'ADMIN' ? 'ADMIN' : 'USER';
+    const status = data.status === 'IN_TRAINING' || data.status === 'INACTIVE' ? data.status : 'INACTIVE';
+    const createdAt = toOptionalISOString(data.created_at ?? data.createdAt);
+    const updatedAt = toOptionalISOString(data.updated_at ?? data.updatedAt);
 
     return {
       uid: snapshot.id,
-      email: data.email,
-      displayName: data.display_name,
-      role: data.role,
-      status: data.status,
-      createdAt: toISOString(data.created_at),
-      updatedAt: toISOString(data.updated_at),
+      email,
+      displayName,
+      role,
+      status,
+      createdAt: createdAt ?? updatedAt ?? UNKNOWN_DATE_ISO,
+      updatedAt: updatedAt ?? createdAt ?? UNKNOWN_DATE_ISO,
     };
   },
 };
