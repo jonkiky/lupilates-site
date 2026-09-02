@@ -1,15 +1,13 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import {
   addMonths,
-  endOfMonth,
   format,
   isSameMonth,
-  startOfMonth,
   subMonths,
 } from 'date-fns';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 
 import { CalendarMonthGrid } from '@/components/calendar/CalendarMonthGrid';
 import { SessionCard } from '@/components/session/SessionCard';
@@ -18,7 +16,7 @@ import { ThemedView } from '@/components/themed-view';
 import { ErrorBanner } from '@/components/ui/StateViews';
 import { ROUTES } from '@/constants/routes';
 import { selectAuthProfile } from '@/features/auth/auth.selectors';
-import { listenUserSessions } from '@/features/sessions/sessions.listener';
+import { listenAllUserSessions } from '@/features/sessions/sessions.listener';
 import {
     selectSessionsError,
     selectSessionsGroupedByLocalDate,
@@ -34,12 +32,12 @@ export default function UserCalendarScreen() {
   const sessionsByDate = useAppSelector(selectSessionsGroupedByLocalDate);
   const sessionsError = useAppSelector(selectSessionsError);
 
-  useEffect(() => {
-    if (!profile?.uid) return;
-    const from = startOfMonth(subMonths(currentMonth, 1));
-    const to = endOfMonth(addMonths(currentMonth, 1));
-    return listenUserSessions(profile.uid, from, to, dispatch);
-  }, [currentMonth, dispatch, profile?.uid]);
+  useFocusEffect(
+    useCallback(() => {
+      if (!profile?.uid) return;
+      return listenAllUserSessions(profile.uid, dispatch);
+    }, [dispatch, profile?.uid]),
+  );
 
   const handlePrevMonth = useCallback(() => {
     setCurrentMonth((month) => subMonths(month, 1));

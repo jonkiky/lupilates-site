@@ -29,6 +29,16 @@ type LegacyUserProfileDto = Partial<UserProfileDto> & {
   updatedAt?: unknown;
 };
 
+type LegacyTrainingSessionDto = Partial<TrainingSessionDto> & {
+  created_by_id?: string;
+  start_time?: unknown;
+  end_time?: unknown;
+  startsAt?: unknown;
+  endsAt?: unknown;
+  createdAt?: unknown;
+  updatedAt?: unknown;
+};
+
 function toNonEmptyString(value: unknown): string | undefined {
   if (typeof value !== 'string') return undefined;
 
@@ -138,19 +148,23 @@ export const trainingSessionConverter: FirestoreDataConverter<TrainingSession, T
     return dto;
   },
   fromFirestore(snapshot: QueryDocumentSnapshot<DocumentData, DocumentData>, options: SnapshotOptions): TrainingSession {
-    const data = snapshot.data(options) as TrainingSessionDto;
+    const data = snapshot.data(options) as LegacyTrainingSessionDto;
+    const startsAt = toISOString(data.starts_at ?? data.start_time ?? data.startsAt);
+    const endsAt = toISOString(data.ends_at ?? data.end_time ?? data.endsAt);
+    const createdAt = toOptionalISOString(data.created_at ?? data.createdAt) ?? startsAt;
+    const updatedAt = toOptionalISOString(data.updated_at ?? data.updatedAt) ?? createdAt;
 
     return {
       id: snapshot.id,
-      userId: data.user_id,
-      trainerId: data.trainer_id,
-      title: data.title,
+      userId: data.user_id ?? '',
+      trainerId: data.trainer_id ?? data.created_by_id,
+      title: data.title ?? 'Pilates Session',
       notes: data.notes,
-      status: data.status,
-      startsAt: toISOString(data.starts_at),
-      endsAt: toISOString(data.ends_at),
-      createdAt: toISOString(data.created_at),
-      updatedAt: toISOString(data.updated_at),
+      status: data.status ?? 'SCHEDULED',
+      startsAt,
+      endsAt,
+      createdAt,
+      updatedAt,
     };
   },
 };
