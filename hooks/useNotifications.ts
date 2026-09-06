@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useState } from 'react';
 
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
@@ -14,11 +14,16 @@ import {
   setPushToken,
   setSchedulerReady,
 } from '@/features/notifications/notifications.slice';
-import { syncSessionReminders } from '@/features/notifications/reminderScheduler';
+import { selectNotificationPreference } from '@/features/notifications/notifications.selectors';
+import {
+  ADMIN_SESSION_LOOKAHEAD_DAYS,
+  syncReminders,
+} from '@/features/notifications/reminderScheduler';
+import { listenAllSessionsInRange } from '@/features/sessions/sessions.listener';
 import { selectUpcomingSessions } from '@/features/sessions/sessions.selectors';
 import { getNotificationPreference } from '@/features/sessions/sessions.service';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import type { NotificationPreference } from '@/types/domain';
+import type { NotificationPreference, TrainingSession } from '@/types/domain';
 
 // Configure how notifications are presented when app is in foreground
 Notifications.setNotificationHandler({
@@ -47,9 +52,17 @@ export function useNotifications() {
   const router = useRouter();
   const profile = useAppSelector(selectAuthProfile);
   const upcomingSessions = useAppSelector(selectUpcomingSessions);
+  const preference = useAppSelector(selectNotificationPreference);
 
-  // Ref to hold the latest preference so scheduler effect can use it
-  const preferenceRef = useRef<NotificationPreference | null>(null);
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+
+    Notifications.setNotificationChannelAsync('session-reminders', {
+      name: 'Session reminders',
+      importance: Notifications.AndroidImportance.HIGH,
+      sound: 'default',
+    }).catch(() => undefined);
+  }, []);
 
   // ---- 1. Request permission & register token on sign-in ----
   useEffect(() => {
@@ -68,7 +81,6 @@ export function useNotifications() {
       const pref = await getNotificationPreference(profile.uid);
       if (pref) {
         dispatch(preferenceReceived(pref));
-        preferenceRef.current = pref;
       } else {
         // Default preference for new users
         const defaultPref: NotificationPreference = {
@@ -78,20 +90,38 @@ export function useNotifications() {
           updatedAt: new Date().toISOString(),
         };
         dispatch(preferenceReceived(defaultPref));
-        preferenceRef.current = defaultPref;
       }
     })();
   }, [dispatch, profile?.uid]);
 
-  // ---- 2. Reschedule reminders when sessions change ----
-  useEffect(() => {
-    const pref = preferenceRef.current;
-    if (!pref || !profile?.uid) return;
+  // ---- 2a. Admins additionally watch every studio session ----
+  const isAdmin = profile?.role === 'ADMIN';
+  const [adminSessions, setAdminSessions] = useState<TrainingSession[]>([]);
 
-    syncSessionReminders(upcomingSessions, pref).then(() => {
+  useEffect(() => {
+    if (!isAdmin) {
+      setAdminSessions([]);
+      return;
+    }
+
+    const from = new Date();
+    const to = new Date(from.getTime() + ADMIN_SESSION_LOOKAHEAD_DAYS * 24 * 3600 * 1000);
+
+    return listenAllSessionsInRange(from, to, setAdminSessions);
+  }, [isAdmin]);
+
+  // ---- 2b. Reschedule reminders when sessions change ----
+  useEffect(() => {
+    if (!preference || !profile?.uid) return;
+
+    syncReminders({
+      personalSessions: upcomingSessions,
+      preference,
+      adminSessions: isAdmin ? adminSessions : undefined,
+    }).then(() => {
       dispatch(setSchedulerReady(true));
     });
-  }, [dispatch, profile?.uid, upcomingSessions]);
+  }, [adminSessions, dispatch, isAdmin, preference, profile?.uid, upcomingSessions]);
 
   // ---- 3. Handle notification tap → deep link ----
   useEffect(() => {

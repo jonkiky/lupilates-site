@@ -8,7 +8,7 @@ import {
 } from '@/features/sessions/sessions.slice';
 import { trainingSessionsCollection } from '@/lib/firebase/collections';
 import type { AppDispatch } from '@/store';
-import type { SessionStatus } from '@/types/domain';
+import type { SessionStatus, TrainingSession } from '@/types/domain';
 
 export function listenUserSessions(
   uid: string,
@@ -143,4 +143,43 @@ export function listenAllAdminSessions(dispatch: AppDispatch): () => void {
     unsubscribe();
     dispatch(setListenerActive(false));
   };
+}
+
+/**
+ * Admin-only feed of every studio session in a time window, delivered straight
+ * to the caller instead of the Redux store.
+ *
+ * Reminder scheduling must not depend on which screen happens to be mounted,
+ * and the screen listeners above own `state.sessions` — so this one stays out
+ * of Redux entirely and hands sessions back through `onSessions`.
+ */
+export function listenAllSessionsInRange(
+  fromUtc: Date,
+  toUtc: Date,
+  onSessions: (sessions: TrainingSession[]) => void,
+): () => void {
+  const q = query(
+    trainingSessionsCollection,
+    where('starts_at', '>=', Timestamp.fromDate(fromUtc)),
+    where('starts_at', '<=', Timestamp.fromDate(toUtc)),
+  );
+
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const sessions = snapshot.docs.flatMap((doc) => {
+        try {
+          return [doc.data()];
+        } catch (error) {
+          console.warn(`[admin-reminders] invalid session document (${doc.id}):`, error);
+          return [];
+        }
+      });
+      onSessions(sessions);
+    },
+    (error) => {
+      console.error('[admin-reminders] listener error:', error);
+      onSessions([]);
+    },
+  );
 }

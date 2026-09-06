@@ -23,5 +23,10 @@ export function reminderIdsForSession(sessionId: string, rule: ReminderRule): st
   }
 }
 
+/** Admin: heads-up for a single session anywhere in the studio. */
+export function makeAdminSessionReminderId(sessionId: string, rule: '24H' | '1H'): string {
+  return `reminder-admin-session-${sessionId}-${rule}`;
+}
+
 /** Prefix used for all managed reminder IDs — used to identify "our" notifications. */
 export const REMINDER_PREFIX = 'reminder-';

@@ -11,8 +11,7 @@ import { selectAuthProfile } from '@/features/auth/auth.selectors';
 import { signOutAndCleanup } from '@/features/auth/auth.service';
 import { clearAuthSession } from '@/features/auth/auth.slice';
 import { clearNotifications, preferenceUpdated } from '@/features/notifications/notifications.slice';
-import { cancelAllManagedReminders, syncSessionReminders } from '@/features/notifications/reminderScheduler';
-import { selectUpcomingSessions } from '@/features/sessions/sessions.selectors';
+import { cancelAllManagedReminders } from '@/features/notifications/reminderScheduler';
 import {
     getNotificationPreference,
     saveNotificationPreference,
@@ -31,7 +30,6 @@ export default function UserSettingsScreen() {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const profile = useAppSelector(selectAuthProfile);
-  const upcomingSessions = useAppSelector(selectUpcomingSessions);
 
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [reminderRule, setReminderRule] = useState<ReminderRule>('24H');
@@ -58,10 +56,10 @@ export default function UserSettingsScreen() {
     setSaving(true);
     try {
       await saveNotificationPreference({ uid: profile.uid, enabled: value, reminderRule });
+      // useNotifications re-syncs reminders off this store update, so that it
+      // stays the single owner of scheduling (it also knows about admin-wide
+      // reminders, which this screen does not).
       dispatch(preferenceUpdated({ enabled: value, reminderRule }));
-      // Reschedule reminders with the new preference
-      const pref = { uid: profile.uid, enabled: value, reminderRule, updatedAt: new Date().toISOString() };
-      await syncSessionReminders(upcomingSessions, pref);
     } catch {
       setNotificationsEnabled(!value); // revert
       Alert.alert('Error', 'Failed to update notification preference.');
@@ -78,9 +76,6 @@ export default function UserSettingsScreen() {
     try {
       await saveNotificationPreference({ uid: profile.uid, enabled: notificationsEnabled, reminderRule: rule });
       dispatch(preferenceUpdated({ enabled: notificationsEnabled, reminderRule: rule }));
-      // Reschedule reminders with the new rule
-      const pref = { uid: profile.uid, enabled: notificationsEnabled, reminderRule: rule, updatedAt: new Date().toISOString() };
-      await syncSessionReminders(upcomingSessions, pref);
     } catch {
       setReminderRule(prev); // revert
       Alert.alert('Error', 'Failed to update reminder rule.');

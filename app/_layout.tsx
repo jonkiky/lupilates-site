@@ -18,8 +18,7 @@ function RootNavigation() {
   const colorScheme = useColorScheme();
 
   useAuthGate();
-  // DIAGNOSTIC: temporarily disabled to isolate device-only crash
-  // useNotifications();
+  useNotifications();
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
