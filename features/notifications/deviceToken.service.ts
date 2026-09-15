@@ -25,7 +25,7 @@ function getDevicePlatform(): DevicePlatform {
 export async function upsertDeviceToken(uid: string, token: string): Promise<void> {
   const platform = getDevicePlatform();
   const docId = `${uid}_${platform}`;
-  const now = new Date();
+  const now = new Date().toISOString();
 
   const existing = await findTokenDoc(uid, token);
   if (existing) {

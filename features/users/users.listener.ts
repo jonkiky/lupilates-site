@@ -1,4 +1,4 @@
-import { onSnapshot, query, where } from 'firebase/firestore';
+import { onSnapshot } from 'firebase/firestore';
 
 import { setUsersError, setUsersListenerActive, usersReceived } from '@/features/users/users.slice';
 import { usersCollection } from '@/lib/firebase/collections';
@@ -7,13 +7,24 @@ import type { AppDispatch } from '@/store';
 export function listenUsers(dispatch: AppDispatch): () => void {
   dispatch(setUsersListenerActive(true));
 
-  const q = query(usersCollection, where('role', '==', 'USER'));
-
   const unsubscribe = onSnapshot(
-    q,
+    usersCollection,
     (snapshot) => {
-      const users = snapshot.docs.map((doc) => doc.data());
+      const invalidDocumentIds: string[] = [];
+      const users = snapshot.docs.flatMap((doc) => {
+        try {
+          return [doc.data()];
+        } catch (error) {
+          invalidDocumentIds.push(doc.id);
+          console.warn(`[users] invalid profile document (${doc.id}):`, error);
+          return [];
+        }
+      });
+
       dispatch(usersReceived(users));
+      if (invalidDocumentIds.length > 0) {
+        dispatch(setUsersError('Some user profiles could not be loaded because their data is invalid.'));
+      }
     },
     (error) => {
       console.error('[users] listener error:', error);

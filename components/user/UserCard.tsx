@@ -12,7 +12,10 @@ interface UserCardProps {
 export function UserCard({ user, onPress }: UserCardProps) {
   const statusColor = USER_STATUS_COLORS[user.status];
   const statusLabel = user.status === 'IN_TRAINING' ? 'In Training' : 'Inactive';
-  const initials = user.displayName.charAt(0).toUpperCase();
+  const displayName = user.displayName?.trim() || user.email?.split('@')[0] || 'Unknown User';
+  const initials = displayName.charAt(0).toUpperCase();
+  const badgeColor = user.role === 'ADMIN' ? '#7C3AED' : statusColor;
+  const badgeLabel = user.role === 'ADMIN' ? 'Admin' : statusLabel;
 
   return (
     <Pressable
@@ -24,12 +27,12 @@ export function UserCard({ user, onPress }: UserCardProps) {
       </View>
       <View style={styles.info}>
         <ThemedText type="defaultSemiBold" style={styles.name}>
-          {user.displayName}
+          {displayName}
         </ThemedText>
-        <ThemedText style={styles.email}>{user.email}</ThemedText>
+        <ThemedText style={styles.email}>{user.email ?? ''}</ThemedText>
       </View>
-      <View style={[styles.statusBadge, { backgroundColor: statusColor + '20' }]}>
-        <ThemedText style={[styles.statusText, { color: statusColor }]}>{statusLabel}</ThemedText>
+      <View style={[styles.statusBadge, { backgroundColor: badgeColor + '20' }]}>
+        <ThemedText style={[styles.statusText, { color: badgeColor }]}>{badgeLabel}</ThemedText>
       </View>
     </Pressable>
   );

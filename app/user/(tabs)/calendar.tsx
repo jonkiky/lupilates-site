@@ -1,8 +1,13 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
-import { addMonths, format, subMonths } from 'date-fns';
-import { useRouter } from 'expo-router';
+import {
+  addMonths,
+  format,
+  isSameMonth,
+  subMonths,
+} from 'date-fns';
+import { useFocusEffect, useRouter } from 'expo-router';
 
 import { CalendarMonthGrid } from '@/components/calendar/CalendarMonthGrid';
 import { SessionCard } from '@/components/session/SessionCard';
@@ -10,33 +15,59 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { ErrorBanner } from '@/components/ui/StateViews';
 import { ROUTES } from '@/constants/routes';
+import { selectAuthProfile } from '@/features/auth/auth.selectors';
+import { listenAllUserSessions } from '@/features/sessions/sessions.listener';
 import {
     selectSessionsError,
     selectSessionsGroupedByLocalDate,
-    selectUpcomingSessions,
 } from '@/features/sessions/sessions.selectors';
-import { useAppSelector } from '@/store/hooks';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
 
 export default function UserCalendarScreen() {
+  const dispatch = useAppDispatch();
   const router = useRouter();
+  const profile = useAppSelector(selectAuthProfile);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const sessionsByDate = useAppSelector(selectSessionsGroupedByLocalDate);
-  const upcomingSessions = useAppSelector(selectUpcomingSessions);
   const sessionsError = useAppSelector(selectSessionsError);
 
-  const handlePrevMonth = useCallback(() => setCurrentMonth((m) => subMonths(m, 1)), []);
-  const handleNextMonth = useCallback(() => setCurrentMonth((m) => addMonths(m, 1)), []);
+  useFocusEffect(
+    useCallback(() => {
+      if (!profile?.uid) return;
+      return listenAllUserSessions(profile.uid, dispatch);
+    }, [dispatch, profile?.uid]),
+  );
+
+  const handlePrevMonth = useCallback(() => {
+    setCurrentMonth((month) => subMonths(month, 1));
+    setSelectedDate(undefined);
+  }, []);
+  const handleNextMonth = useCallback(() => {
+    setCurrentMonth((month) => addMonths(month, 1));
+    setSelectedDate(undefined);
+  }, []);
   const handleSelectDate = useCallback((date: Date) => setSelectedDate(date), []);
 
   const selectedDateKey = selectedDate ? format(selectedDate, 'yyyy-MM-dd') : null;
   const selectedDaySessions = selectedDateKey ? sessionsByDate[selectedDateKey] ?? [] : [];
+  const monthSessions = useMemo(
+    () =>
+      Object.values(sessionsByDate)
+        .flat()
+        .filter((session) => isSameMonth(new Date(session.startsAt), currentMonth))
+        .sort(
+          (first, second) =>
+            new Date(first.startsAt).getTime() - new Date(second.startsAt).getTime(),
+        ),
+    [currentMonth, sessionsByDate],
+  );
 
-  // Show either selected day sessions or upcoming sessions
-  const displaySessions = selectedDate ? selectedDaySessions : upcomingSessions.slice(0, 5);
+  // Show either the selected day's sessions or every session in the displayed month.
+  const displaySessions = selectedDate ? selectedDaySessions : monthSessions;
   const sectionTitle = selectedDate
     ? `Sessions on ${format(selectedDate, 'MMMM d')}`
-    : 'Upcoming Sessions';
+    : `Sessions in ${format(currentMonth, 'MMMM')}`;
 
   return (
     <ThemedView style={styles.container}>
@@ -81,7 +112,7 @@ export default function UserCalendarScreen() {
           ) : (
             <View style={styles.emptyCard}>
               <ThemedText style={styles.emptyText}>
-                {selectedDate ? 'No sessions on this day' : 'No upcoming sessions'}
+                {selectedDate ? 'No sessions on this day' : 'No sessions this month'}
               </ThemedText>
             </View>
           )}

@@ -56,10 +56,7 @@ export default function UserDashboardScreen() {
         {/* Header */}
         <View style={styles.header}>
           <View>
-            <ThemedText type="title" style={styles.title}>
-              Dashboard
-            </ThemedText>
-            <ThemedText style={styles.subtitle}>Welcome back, {firstName}</ThemedText>
+            <ThemedText style={styles.welcomeText}>Welcome back, {firstName}</ThemedText>
           </View>
           <Pressable
             style={styles.settingsButton}
@@ -74,11 +71,11 @@ export default function UserDashboardScreen() {
         {/* Stats Cards */}
         <View style={styles.statsRow}>
           <View style={[styles.statCard, styles.statCardPrimary]}>
-            <ThemedText style={styles.statLabel}>Completed Classes</ThemedText>
+            <ThemedText style={styles.statLabel}>Total Classes Completed</ThemedText>
             <ThemedText style={styles.statValue}>{completedTotal}</ThemedText>
           </View>
           <View style={[styles.statCard, styles.statCardSecondary]}>
-            <ThemedText style={styles.statLabel}>This Month</ThemedText>
+            <ThemedText style={styles.statLabel}>Completed This Month</ThemedText>
             <ThemedText style={styles.statValue}>{completedMonth}</ThemedText>
           </View>
         </View>
@@ -140,20 +137,17 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     paddingHorizontal: 20,
     paddingTop: 60,
     paddingBottom: 20,
     backgroundColor: '#FFFFFF',
   },
-  title: {
-    fontSize: 28,
-    lineHeight: 34,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#6B7280',
-    marginTop: 4,
+  welcomeText: {
+    fontSize: 24,
+    lineHeight: 30,
+    fontWeight: '700',
+    color: '#111827',
   },
   settingsButton: {
     width: 40,
@@ -162,7 +156,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#F3F4F6',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 4,
   },
   settingsIcon: {
     fontSize: 20,

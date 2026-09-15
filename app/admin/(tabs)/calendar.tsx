@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
-import { addMonths, endOfMonth, format, isSameDay, startOfMonth, subMonths } from 'date-fns';
+import { addMonths, format, isSameDay, subMonths } from 'date-fns';
 import { useRouter } from 'expo-router';
 
 import { CalendarMonthGrid } from '@/components/calendar/CalendarMonthGrid';
@@ -10,7 +10,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { ErrorBanner } from '@/components/ui/StateViews';
 import { ROUTES } from '@/constants/routes';
-import { listenAdminSessions } from '@/features/sessions/sessions.listener';
+import { listenAllAdminSessions } from '@/features/sessions/sessions.listener';
 import {
     selectSessionsError,
     selectSessionsForDay,
@@ -30,13 +30,11 @@ export default function AdminCalendarScreen() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
 
-  // Listen to admin sessions for current month window
+  // Keep the complete history loaded so past months do not require a timestamp-bounded query.
   useEffect(() => {
-    const from = startOfMonth(subMonths(currentMonth, 1));
-    const to = endOfMonth(addMonths(currentMonth, 1));
-    const unsubscribe = listenAdminSessions(from, to, dispatch);
+    const unsubscribe = listenAllAdminSessions(dispatch);
     return unsubscribe;
-  }, [dispatch, currentMonth]);
+  }, [dispatch]);
 
   // Listen to users for name resolution
   useEffect(() => {

@@ -8,7 +8,7 @@ import {
 } from '@/features/sessions/sessions.slice';
 import { trainingSessionsCollection } from '@/lib/firebase/collections';
 import type { AppDispatch } from '@/store';
-import type { SessionStatus } from '@/types/domain';
+import type { SessionStatus, TrainingSession } from '@/types/domain';
 
 export function listenUserSessions(
   uid: string,
@@ -35,6 +35,38 @@ export function listenUserSessions(
     (error) => {
       console.error('[sessions] listener error:', error);
       dispatch(setSessionsError('Failed to load sessions. Please check your connection.'));
+      dispatch(setListenerActive(false));
+    },
+  );
+
+  return () => {
+    unsubscribe();
+    dispatch(setListenerActive(false));
+  };
+}
+
+export function listenAllUserSessions(uid: string, dispatch: AppDispatch): () => void {
+  dispatch(setQueryWindow({ from: new Date(0).toISOString(), to: new Date(8.64e15).toISOString() }));
+  dispatch(setListenerActive(true));
+
+  const q = query(trainingSessionsCollection, where('user_id', '==', uid));
+
+  const unsubscribe = onSnapshot(
+    q,
+    (snapshot) => {
+      const sessions = snapshot.docs.flatMap((doc) => {
+        try {
+          return [doc.data()];
+        } catch (error) {
+          console.warn(`[sessions] invalid session document (${doc.id}):`, error);
+          return [];
+        }
+      });
+      dispatch(sessionsReceived(sessions));
+    },
+    (error) => {
+      console.error('[sessions] history listener error:', error);
+      dispatch(setSessionsError('Failed to load session history. Please check your connection.'));
       dispatch(setListenerActive(false));
     },
   );
@@ -81,4 +113,73 @@ export function listenAdminSessions(
     unsubscribe();
     dispatch(setListenerActive(false));
   };
+}
+
+export function listenAllAdminSessions(dispatch: AppDispatch): () => void {
+  dispatch(setQueryWindow({ from: new Date(0).toISOString(), to: new Date(8.64e15).toISOString() }));
+  dispatch(setListenerActive(true));
+
+  const unsubscribe = onSnapshot(
+    trainingSessionsCollection,
+    (snapshot) => {
+      const sessions = snapshot.docs.flatMap((doc) => {
+        try {
+          return [doc.data()];
+        } catch (error) {
+          console.warn(`[admin-sessions] invalid session document (${doc.id}):`, error);
+          return [];
+        }
+      });
+      dispatch(sessionsReceived(sessions));
+    },
+    (error) => {
+      console.error('[admin-sessions] history listener error:', error);
+      dispatch(setSessionsError('Failed to load session history. Please check your connection.'));
+      dispatch(setListenerActive(false));
+    },
+  );
+
+  return () => {
+    unsubscribe();
+    dispatch(setListenerActive(false));
+  };
+}
+
+/**
+ * Admin-only feed of every studio session in a time window, delivered straight
+ * to the caller instead of the Redux store.
+ *
+ * Reminder scheduling must not depend on which screen happens to be mounted,
+ * and the screen listeners above own `state.sessions` — so this one stays out
+ * of Redux entirely and hands sessions back through `onSessions`.
+ */
+export function listenAllSessionsInRange(
+  fromUtc: Date,
+  toUtc: Date,
+  onSessions: (sessions: TrainingSession[]) => void,
+): () => void {
+  const q = query(
+    trainingSessionsCollection,
+    where('starts_at', '>=', Timestamp.fromDate(fromUtc)),
+    where('starts_at', '<=', Timestamp.fromDate(toUtc)),
+  );
+
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const sessions = snapshot.docs.flatMap((doc) => {
+        try {
+          return [doc.data()];
+        } catch (error) {
+          console.warn(`[admin-reminders] invalid session document (${doc.id}):`, error);
+          return [];
+        }
+      });
+      onSessions(sessions);
+    },
+    (error) => {
+      console.error('[admin-reminders] listener error:', error);
+      onSessions([]);
+    },
+  );
 }

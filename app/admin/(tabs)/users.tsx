@@ -7,16 +7,12 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { ErrorBanner } from '@/components/ui/StateViews';
 import { UserCard } from '@/components/user/UserCard';
-import { UserFilterTabs } from '@/components/user/UserFilterTabs';
+import { UserFilterTabs, type UserFilterTab } from '@/components/user/UserFilterTabs';
 import { UserSearchInput } from '@/components/user/UserSearchInput';
 import { ROUTES } from '@/constants/routes';
 import { listenUsers } from '@/features/users/users.listener';
 import { selectAllUsers, selectUsersError } from '@/features/users/users.selectors';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import type { UserStatus } from '@/types/domain';
-
-type FilterTab = UserStatus | 'ALL';
-
 export default function AdminUsersScreen() {
   const dispatch = useAppDispatch();
   const router = useRouter();
@@ -24,7 +20,7 @@ export default function AdminUsersScreen() {
   const usersError = useAppSelector(selectUsersError);
 
   const [search, setSearch] = useState('');
-  const [filterTab, setFilterTab] = useState<FilterTab>('IN_TRAINING');
+  const [filterTab, setFilterTab] = useState<UserFilterTab>('IN_TRAINING');
 
   useEffect(() => {
     const unsubscribe = listenUsers(dispatch);
@@ -33,14 +29,17 @@ export default function AdminUsersScreen() {
 
   const filteredUsers = useMemo(() => {
     let list = allUsers;
-    if (filterTab !== 'ALL') {
-      list = list.filter((u) => u.status === filterTab);
+    if (filterTab === 'ADMIN') {
+      list = list.filter((u) => u.role === 'ADMIN');
+    } else if (filterTab !== 'ALL') {
+      list = list.filter((u) => u.role === 'USER' && u.status === filterTab);
     }
     if (search.trim()) {
       const q = search.toLowerCase().trim();
       list = list.filter(
         (u) =>
-          u.displayName.toLowerCase().includes(q) || u.email.toLowerCase().includes(q),
+          (u.displayName ?? '').toLowerCase().includes(q) ||
+          (u.email ?? '').toLowerCase().includes(q),
       );
     }
     return list;
