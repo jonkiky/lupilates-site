@@ -8,6 +8,10 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { ROUTES } from '@/constants/routes';
 import { selectAuthProfile } from '@/features/auth/auth.selectors';
+import {
+  deleteAccountAndData,
+  RecentLoginRequiredError,
+} from '@/features/auth/accountDeletion.service';
 import { signOutAndCleanup } from '@/features/auth/auth.service';
 import { clearAuthSession } from '@/features/auth/auth.slice';
 import { clearNotifications, preferenceUpdated } from '@/features/notifications/notifications.slice';
@@ -35,6 +39,7 @@ export default function UserSettingsScreen() {
   const [reminderRule, setReminderRule] = useState<ReminderRule>('24H');
   // saving tracks whether a preference write is in-flight (future use for spinner)
   const [, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   // Load existing preference
   useEffect(() => {
@@ -106,6 +111,48 @@ export default function UserSettingsScreen() {
     ]);
   };
 
+  const handleDeleteAccount = () => {
+    if (!profile?.uid) return;
+
+    Alert.alert(
+      'Delete Account',
+      'This permanently deletes your account, your profile, and your notification settings. ' +
+        'Your booking history stays with the studio as their record, but is no longer linked to you. ' +
+        'This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            setDeleting(true);
+            try {
+              await deleteAccountAndData(profile.uid);
+              dispatch(clearSessions());
+              dispatch(clearNotifications());
+              dispatch(clearAuthSession());
+              router.replace(ROUTES.auth.login);
+            } catch (error) {
+              if (error instanceof RecentLoginRequiredError) {
+                Alert.alert(
+                  'Sign In Again',
+                  'For your security, please sign out and sign back in, then delete your account.',
+                );
+              } else {
+                Alert.alert(
+                  'Error',
+                  'We could not delete your account. Please try again, or email us for help.',
+                );
+              }
+            } finally {
+              setDeleting(false);
+            }
+          },
+        },
+      ],
+    );
+  };
+
   const initials = (profile?.displayName ?? 'U').charAt(0).toUpperCase();
 
   return (
@@ -175,6 +222,23 @@ export default function UserSettingsScreen() {
             onPress={handleSignOut}>
             <ThemedText style={styles.signOutText}>Sign Out</ThemedText>
           </Pressable>
+
+          <Pressable
+            disabled={deleting}
+            style={({ pressed }) => [
+              styles.deleteButton,
+              pressed && styles.pressed,
+              deleting && styles.deleteButtonDisabled,
+            ]}
+            onPress={handleDeleteAccount}>
+            <ThemedText style={styles.deleteText}>
+              {deleting ? 'Deleting…' : 'Delete Account'}
+            </ThemedText>
+          </Pressable>
+
+          <ThemedText style={styles.deleteHint}>
+            Permanently deletes your account and personal data.
+          </ThemedText>
         </View>
       </ScrollView>
     </ThemedView>
@@ -318,5 +382,28 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#DC2626',
+  },
+  deleteButton: {
+    marginTop: 12,
+    borderRadius: 16,
+    padding: 20,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#FCA5A5',
+  },
+  deleteButtonDisabled: {
+    opacity: 0.5,
+  },
+  deleteText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#B91C1C',
+  },
+  deleteHint: {
+    marginTop: 8,
+    paddingHorizontal: 4,
+    fontSize: 13,
+    lineHeight: 18,
+    color: '#6B7280',
   },
 });

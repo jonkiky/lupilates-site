@@ -1,0 +1,58 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAuthed() { return request.auth != null; }
+
+    function isAdmin(uid) {
+      return get(/databases/$(database)/documents/users/$(uid)).data.role == 'ADMIN';
+    }
+
+    match /users/{userId} {
+      allow read: if isAuthed() && (request.auth.uid == userId || isAdmin(request.auth.uid));
+
+      // A user may create their own profile, but only as a USER. Without this
+      // constraint anyone could sign up and write role:'ADMIN' to their own
+      // document, which isAdmin() then trusts — a full privilege escalation.
+      allow create: if isAuthed()
+        && request.auth.uid == userId
+        && request.resource.data.role == 'USER';
+
+      // A user may edit their own profile but never change their own role.
+      // Admins may change anything, including promoting another user.
+      allow update: if isAuthed() && (
+        (request.auth.uid == userId && request.resource.data.role == resource.data.role)
+        || isAdmin(request.auth.uid)
+      );
+
+      // Required for in-app account deletion (App Store guideline 5.1.1(v)).
+      allow delete: if isAuthed() && (request.auth.uid == userId || isAdmin(request.auth.uid));
+    }
+
+    match /training_sessions/{sessionId} {
+      allow read: if isAuthed() && (
+        resource.data.user_id == request.auth.uid || isAdmin(request.auth.uid)
+      );
+      // Deliberately admin-only, including delete: these are the studio's
+      // booking records, so a client must not be able to erase the schedule.
+      allow create, update, delete: if isAuthed() && isAdmin(request.auth.uid);
+    }
+
+    match /notification_preferences/{userId} {
+      allow read, write: if isAuthed() && (request.auth.uid == userId || isAdmin(request.auth.uid));
+    }
+
+    match /device_tokens/{tokenId} {
+      // NOTE: the field is `uid`, matching deviceTokenConverter in
+      // lib/firebase/converters.ts. It is NOT user_id — using the wrong name
+      // here silently denies every token write and breaks push entirely.
+      allow read: if isAuthed() && (
+        resource.data.uid == request.auth.uid || isAdmin(request.auth.uid)
+      );
+      allow create, update: if isAuthed() && request.resource.data.uid == request.auth.uid;
+      allow delete: if isAuthed() && (
+        resource.data.uid == request.auth.uid || isAdmin(request.auth.uid)
+      );
+    }
+  }
+}
